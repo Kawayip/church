@@ -1,14 +1,16 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   BarChart3, Users, Calendar, FileText, Settings, 
   Plus, Edit, Trash2, Image, DollarSign, Bell, 
-  Eye, MessageSquare, Upload, LogOut, User, Moon, Sun
+  Eye, MessageSquare, Upload, LogOut, User, Moon, Sun, Loader2, AlertCircle, Search
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigate } from 'react-router-dom';
+import { resourcesAPI, type Resource } from '../services/api';
+import { ResourceModal } from '../components/ResourceModal';
 import { AdminPosts } from './AdminPosts';
 import { AdminMinistries } from './AdminMinistries';
 import { AdminEvents } from './AdminEvents';
@@ -18,11 +20,88 @@ export const AdminDashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  
+  // Resources state
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [resourcesLoading, setResourcesLoading] = useState(false);
+  const [resourcesError, setResourcesError] = useState<string | null>(null);
+  const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
+  const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
+  const [resourcesSearchTerm, setResourcesSearchTerm] = useState('');
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
+
+  // Resources functions
+  const fetchResources = async () => {
+    try {
+      setResourcesLoading(true);
+      setResourcesError(null);
+      
+      const response = await resourcesAPI.getAll();
+      
+      if (response.success && response.data) {
+        console.log('Resources data:', response.data); // Debug log
+        setResources(response.data);
+      } else {
+        setResourcesError(response.message || 'Failed to fetch resources');
+      }
+    } catch (err) {
+      setResourcesError('Failed to fetch resources');
+      console.error('Error fetching resources:', err);
+    } finally {
+      setResourcesLoading(false);
+    }
+  };
+
+  const handleCreateResource = () => {
+    setSelectedResource(null);
+    setIsResourceModalOpen(true);
+  };
+
+  const handleEditResource = (resource: Resource) => {
+    setSelectedResource(resource);
+    setIsResourceModalOpen(true);
+  };
+
+  const handleDeleteResource = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this resource?')) {
+      return;
+    }
+
+    try {
+      const response = await resourcesAPI.delete(id);
+      
+      if (response.success) {
+        setResources(prev => prev.filter(resource => resource.id !== id));
+      } else {
+        alert(response.message || 'Failed to delete resource');
+      }
+    } catch (err) {
+      alert('Failed to delete resource');
+      console.error('Error deleting resource:', err);
+    }
+  };
+
+  const handleResourceModalSuccess = () => {
+    setIsResourceModalOpen(false);
+    setSelectedResource(null);
+    fetchResources();
+  };
+
+  const handleCloseResourceModal = () => {
+    setIsResourceModalOpen(false);
+    setSelectedResource(null);
+  };
+
+  // Fetch resources when resources tab is active
+  useEffect(() => {
+    if (activeTab === 'resources') {
+      fetchResources();
+    }
+  }, [activeTab]);
 
   const stats = [
     { label: 'Total Members', value: '1,247', change: '+12', icon: Users, color: 'emerald' },
@@ -48,6 +127,7 @@ export const AdminDashboard: React.FC = () => {
     { id: 'posts', name: 'Posts', icon: FileText },
     { id: 'ministries', name: 'Ministries', icon: Users },
     { id: 'events', name: 'Events', icon: Calendar },
+    { id: 'resources', name: 'Resources', icon: FileText },
     { id: 'gallery', name: 'Gallery', icon: Image },
     { id: 'members', name: 'Members', icon: Users },
     { id: 'settings', name: 'Settings', icon: Settings }
@@ -156,6 +236,158 @@ export const AdminDashboard: React.FC = () => {
       
       case 'events':
         return <AdminEvents />;
+      
+      case 'resources':
+        return (
+          <div>
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Manage Resources</h2>
+                <p className="mt-1 text-gray-600 dark:text-gray-400">
+                  Upload and manage church resources, study materials, and documents
+                </p>
+              </div>
+              <div className="mt-4 sm:mt-0">
+                <button
+                  onClick={handleCreateResource}
+                  className="btn-primary flex items-center space-x-2"
+                >
+                  <Plus className="h-5 w-5" />
+                  <span>Add Resource</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Search */}
+            <div className="mb-6">
+              <div className="relative max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search resources..."
+                  value={resourcesSearchTerm}
+                  onChange={(e) => setResourcesSearchTerm(e.target.value)}
+                  className="form-input pl-10 w-full"
+                />
+              </div>
+            </div>
+
+            {/* Resources List */}
+            {resourcesLoading ? (
+              <div className="text-center py-12">
+                <Loader2 className="h-12 w-12 text-emerald-600 animate-spin mx-auto mb-4" />
+                <p className="text-gray-600 dark:text-gray-400">Loading resources...</p>
+              </div>
+            ) : resourcesError ? (
+              <div className="text-center py-12">
+                <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-red-600 dark:text-red-400 mb-2">Error Loading Resources</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">{resourcesError}</p>
+                <button onClick={fetchResources} className="btn-primary">Try Again</button>
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                    <thead className="bg-gray-50 dark:bg-slate-700">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Resource
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Category
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Type
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Downloads
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
+                      {resources
+                        .filter(resource => 
+                          resource.title.toLowerCase().includes(resourcesSearchTerm.toLowerCase()) ||
+                          (resource.description && resource.description.toLowerCase().includes(resourcesSearchTerm.toLowerCase()))
+                        )
+                        .map((resource) => (
+                        <tr key={resource.id} className="hover:bg-gray-50 dark:hover:bg-slate-700">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="p-2 rounded-lg bg-gray-100 dark:bg-slate-600 text-gray-500">
+                                <FileText className="h-5 w-5" />
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {resource.title}
+                                </div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400">
+                                  {resource.description || 'No description'}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                            {resource.category}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-slate-600 dark:text-gray-200">
+                              {(resource.file_type || 'unknown').toUpperCase()}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                            {resource.download_count}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div className="flex items-center justify-end space-x-2">
+                              <button
+                                onClick={() => handleEditResource(resource)}
+                                className="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteResource(resource.id)}
+                                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {resources.filter(resource => 
+                  resource.title.toLowerCase().includes(resourcesSearchTerm.toLowerCase()) ||
+                  (resource.description && resource.description.toLowerCase().includes(resourcesSearchTerm.toLowerCase()))
+                ).length === 0 && !resourcesLoading && (
+                  <div className="text-center py-12">
+                    <FileText className="h-12 w-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No resources found</h3>
+                    <p className="text-gray-500 dark:text-gray-400">Get started by adding your first resource.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Resource Modal */}
+            {isResourceModalOpen && (
+              <ResourceModal
+                resource={selectedResource}
+                onSuccess={handleResourceModalSuccess}
+                onClose={handleCloseResourceModal}
+              />
+            )}
+          </div>
+        );
       
       default:
         return (

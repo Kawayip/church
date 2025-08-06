@@ -67,8 +67,8 @@ router.get('/gallery/:id', async (req, res) => {
 router.post('/resources', authenticateToken, requireAdmin, [
     body('title').notEmpty().withMessage('Title is required'),
     body('description').optional(),
-    body('fileType').isIn(['pdf', 'doc', 'video', 'audio', 'image']).withMessage('Invalid file type'),
-    body('category').isIn(['study', 'music', 'announcement', 'form', 'other']).withMessage('Invalid category'),
+    body('fileType').isIn(['pdf', 'doc', 'video', 'audio', 'image', 'zip']).withMessage('Invalid file type'),
+    body('category').isIn(['bulletins', 'sermons', 'study-guides', 'sabbath-school', 'music', 'health', 'youth', 'training', 'other']).withMessage('Invalid category'),
     body('fileData').notEmpty().withMessage('File data is required'),
     body('mimeType').notEmpty().withMessage('MIME type is required'),
     body('fileName').notEmpty().withMessage('File name is required'),
@@ -84,8 +84,8 @@ router.post('/resources', authenticateToken, requireAdmin, [
         const uploadedBy = req.user.id;
 
         const [result] = await pool.execute(
-            'INSERT INTO resources (title, description, file_data, file_type, file_name, mime_type, file_size, category, uploaded_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [title, description, Buffer.from(fileData, 'base64'), fileType, fileName, mimeType, fileSize, category, uploadedBy]
+            'INSERT INTO resources (title, description, file_data, file_type, file_name, mime_type, file_size, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [title, description, Buffer.from(fileData, 'base64'), fileType, fileName, mimeType, fileSize, category]
         );
 
         res.status(201).json({
@@ -105,7 +105,7 @@ router.get('/resources/:id', async (req, res) => {
         const { id } = req.params;
         
         const [rows] = await pool.execute(
-            'SELECT file_data, mime_type, file_name FROM resources WHERE id = ? AND is_public = TRUE',
+            'SELECT file_data, mime_type, file_name FROM resources WHERE id = ?',
             [id]
         );
 

@@ -546,13 +546,13 @@ interface Resource {
   id: number;
   title: string;
   description?: string;
-  fileType: 'pdf' | 'doc' | 'video' | 'audio' | 'image' | 'zip';
+  file_type: 'pdf' | 'doc' | 'video' | 'audio' | 'image' | 'zip';
   category: 'bulletins' | 'sermons' | 'study-guides' | 'sabbath-school' | 'music' | 'health' | 'youth' | 'training' | 'other';
-  fileName: string;
-  fileSize: number;
-  mimeType: string;
-  downloadCount: number;
-  isFeatured: boolean;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  download_count: number;
+  is_featured: boolean;
   created_at: string;
   updated_at: string;
 }
