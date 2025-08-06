@@ -2,7 +2,7 @@ import * as React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Users, Heart, BookOpen, ArrowRight, Play, Clock, MapPin, Phone, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { getChurchIcon, getTeamImage } from '../utils/assets';
+import { getChurchIcon, getTeamImage, getBackgroundImage } from '../utils/assets';
 import { useState, useEffect } from 'react';
 import { eventsAPI, Event } from '../services/api';
 import { format } from 'date-fns';
@@ -17,14 +17,11 @@ export const Home: React.FC = () => {
   const [eventsError, setEventsError] = useState<string | null>(null);
   
   // Background images for carousel
-  // Replace these paths with your own images
-  // Place your images in: src/assets/images/hero/
-  // Recommended image names: hero-bg-1.jpg, hero-bg-2.jpg, hero-bg-3.jpg
-  // Recommended size: 1920x1080px or larger, landscape orientation
+  // Using public folder images for production compatibility
   const backgroundImages = [
-    '/src/assets/images/hero/hero-bg-1.jpg',  // Replace with your church image
-    '/src/assets/images/hero/hero-bg-2.jpg',  // Replace with your church image  
-    '/src/assets/images/hero/hero-bg-3.jpg'   // Replace with your church image
+    getBackgroundImage('hero1'),
+    getBackgroundImage('hero2'),
+    getBackgroundImage('hero3')
   ];
 
   // Test if images are loading

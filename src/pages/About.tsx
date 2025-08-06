@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { motion } from 'framer-motion';
 import { Users, Heart, BookOpen, Globe, Download, FileText } from 'lucide-react';
-import { getTeamImage } from '../utils/assets';
+import { getTeamImage, getUIImage } from '../utils/assets';
 
 export const About: React.FC = () => {
 
@@ -112,7 +112,7 @@ export const About: React.FC = () => {
             >
               <div className="h-48 bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
                 <img 
-                  src="/src/assets/images/ui/adults.jpg" 
+                  src={getUIImage('adults')} 
                   alt="Main Adult Church"
                   className="w-full h-full object-cover"
                 />
@@ -134,7 +134,7 @@ export const About: React.FC = () => {
             >
               <div className="h-48 bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
                 <img 
-                  src="/src/assets/images/ui/ambassadors.jpg" 
+                  src={getUIImage('ambassadors')} 
                   alt="Ambassadors Church"
                   className="w-full h-full object-cover"
                 />
@@ -156,7 +156,7 @@ export const About: React.FC = () => {
             >
               <div className="h-48 bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
                 <img 
-                  src="/src/assets/images/ui/children.jpg" 
+                  src={getUIImage('children')} 
                   alt="Children's Church"
                   className="w-full h-full object-cover"
                 />
@@ -197,7 +197,7 @@ export const About: React.FC = () => {
             >
               <div className="h-80 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl overflow-hidden">
                 <img 
-                  src="/src/assets/images/ui/worship.jpg" 
+                  src={getUIImage('worship')} 
                   alt="Worship Service"
                   className="w-full h-full object-cover"
                 />
@@ -272,7 +272,7 @@ export const About: React.FC = () => {
             >
               <div className="h-80 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl overflow-hidden">
                 <img 
-                  src="/src/assets/images/ui/fellowship.jpg" 
+                  src={getUIImage('fellowship')} 
                   alt="Fellowship Activities"
                   className="w-full h-full object-cover"
                 />
@@ -309,7 +309,7 @@ export const About: React.FC = () => {
             >
               <div className="h-40 bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
                 <img 
-                  src="/src/assets/images/ui/sabbathschool1.jpg" 
+                  src={getUIImage('sabbathschool1')} 
                   alt="Sabbath School"
                   className="w-full h-full object-cover"
                 />
@@ -330,7 +330,7 @@ export const About: React.FC = () => {
             >
               <div className="h-40 bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
                 <img 
-                  src="/src/assets/images/ui/youth.jpg" 
+                  src={getUIImage('youth')} 
                   alt="Youth Programs"
                   className="w-full h-full object-cover"
                 />
@@ -351,7 +351,7 @@ export const About: React.FC = () => {
             >
               <div className="h-40 bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
                 <img 
-                  src="/src/assets/images/ui/outreach.jpg" 
+                  src={getUIImage('outreach')} 
                   alt="Community Outreach"
                   className="w-full h-full object-cover"
                 />
@@ -372,7 +372,7 @@ export const About: React.FC = () => {
             >
               <div className="h-40 bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
                 <img 
-                  src="/src/assets/images/ui/fellowship.jpg" 
+                  src={getUIImage('fellowship')} 
                   alt="Fellowship Events"
                   className="w-full h-full object-cover"
                 />

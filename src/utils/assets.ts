@@ -1,39 +1,43 @@
 // Static Assets Management
 // This file helps organize and manage static images, logos, and other assets
+// Updated to use public folder URLs for production compatibility
 
-// Logo imports
-import churchLogo from '../assets/images/logos/church-logo.png';
-import churchLogoDark from '../assets/images/logos/church-logo-dark.png';
-import churchIcon from '../assets/images/logos/church-icon.png';
-
-// Team member images (add your actual team photos here)
-import defaultAvatar from '../assets/images/ui/default-avatar.png';
-import pastorImage from '../assets/images/team/pastor.jpg';
-import elderImage from '../assets/images/team/elder.jpg';
-import deaconImage from '../assets/images/team/deacon.jpg';
-
-// Asset configuration
+// Asset configuration with public URLs
 export const ASSETS = {
   logos: {
     church: {
-      light: churchLogo,
-      dark: churchLogoDark,
+      light: '/images/logos/church-logo.png',
+      dark: '/images/logos/church-logo-dark.png',
     },
-    icon: churchIcon,
+    icon: '/images/logos/church-icon.png',
   },
   team: {
-    default: defaultAvatar,
-    pastor: pastorImage,
-    elder: elderImage,
-    deacon: deaconImage,
+    default: '/images/ui/default-avatar.png',
+    pastor: '/images/team/pastor.jpg',
+    elder: '/images/team/elder.jpg',
+    deacon: '/images/team/deacon.jpg',
     // Add more team members as needed:
-    // staff1: staff1Image,
+    // staff1: '/images/team/staff1.jpg',
   },
   icons: {
     // Add custom icons here if needed
   },
   backgrounds: {
     // Add background images here if needed
+    hero1: '/images/hero/hero-bg-1.jpg',
+    hero2: '/images/hero/hero-bg-2.jpg',
+    hero3: '/images/hero/hero-bg-3.jpg',
+  },
+  ui: {
+    adults: '/images/ui/adults.jpg',
+    ambassadors: '/images/ui/ambassadors.jpg',
+    children: '/images/ui/children.jpg',
+    fellowship: '/images/ui/fellowship.jpg',
+    outreach: '/images/ui/outreach.jpg',
+    sabbathschool: '/images/ui/sabbathschool.jpg',
+    sabbathschool1: '/images/ui/sabbathschool1.jpg',
+    worship: '/images/ui/worship.jpg',
+    youth: '/images/ui/youth.jpg',
   },
 };
 
@@ -59,4 +63,14 @@ export const getAsset = (path: string, fallback?: string) => {
   } catch {
     return fallback || ASSETS.team.default;
   }
+};
+
+// Helper function to get UI image
+export const getUIImage = (imageId: string) => {
+  return ASSETS.ui[imageId as keyof typeof ASSETS.ui] || ASSETS.team.default;
+};
+
+// Helper function to get background image
+export const getBackgroundImage = (imageId: string) => {
+  return ASSETS.backgrounds[imageId as keyof typeof ASSETS.backgrounds] || ASSETS.backgrounds.hero1;
 }; 
