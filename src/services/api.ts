@@ -541,6 +541,36 @@ export const healthAPI = {
   },
 };
 
+// Resource interfaces
+interface Resource {
+  id: number;
+  title: string;
+  description?: string;
+  fileType: 'pdf' | 'doc' | 'video' | 'audio' | 'image' | 'zip';
+  category: 'bulletins' | 'sermons' | 'study-guides' | 'sabbath-school' | 'music' | 'health' | 'youth' | 'training' | 'other';
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  downloadCount: number;
+  isFeatured: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface CreateResourceRequest {
+  title: string;
+  description?: string;
+  fileType: 'pdf' | 'doc' | 'video' | 'audio' | 'image' | 'zip';
+  category: 'bulletins' | 'sermons' | 'study-guides' | 'sabbath-school' | 'music' | 'health' | 'youth' | 'training' | 'other';
+  fileData: string;
+  mimeType: string;
+  fileName: string;
+  fileSize: number;
+  isFeatured?: boolean;
+}
+
+interface UpdateResourceRequest extends Partial<CreateResourceRequest> {}
+
 // File handling API
 export const filesAPI = {
   // Upload image to gallery
@@ -562,16 +592,7 @@ export const filesAPI = {
   getGalleryImage: (id: number): string => `${API_BASE_URL}/files/gallery/${id}`,
 
   // Upload resource file
-  uploadResource: async (data: {
-    title: string;
-    description?: string;
-    fileType: 'pdf' | 'doc' | 'video' | 'audio' | 'image';
-    category: 'study' | 'music' | 'announcement' | 'form' | 'other';
-    fileData: string;
-    mimeType: string;
-    fileName: string;
-    fileSize: number;
-  }): Promise<ApiResponse<{ id: number }>> => {
+  uploadResource: async (data: CreateResourceRequest): Promise<ApiResponse<{ id: number }>> => {
     return apiRequest('/files/resources', {
       method: 'POST',
       body: JSON.stringify(data)
@@ -611,6 +632,61 @@ export const filesAPI = {
       };
       reader.onerror = error => reject(error);
     });
+  }
+};
+
+// Resources API functions
+export const resourcesAPI = {
+  getAll: async (params?: {
+    page?: number;
+    limit?: number;
+    category?: string;
+    search?: string;
+    featured?: boolean;
+  }): Promise<ApiResponse<Resource[]>> => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.limit) searchParams.append('limit', params.limit.toString());
+    if (params?.category) searchParams.append('category', params.category);
+    if (params?.search) searchParams.append('search', params.search);
+    if (params?.featured !== undefined) searchParams.append('featured', params.featured.toString());
+    
+    const queryString = searchParams.toString();
+    return apiRequest(`/resources${queryString ? `?${queryString}` : ''}`);
+  },
+
+  getById: async (id: number): Promise<ApiResponse<Resource>> => {
+    return apiRequest(`/resources/${id}`);
+  },
+
+  create: async (data: CreateResourceRequest): Promise<ApiResponse<Resource>> => {
+    return apiRequest('/resources', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  update: async (id: number, data: UpdateResourceRequest): Promise<ApiResponse<Resource>> => {
+    return apiRequest(`/resources/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+
+  delete: async (id: number): Promise<ApiResponse> => {
+    return apiRequest(`/resources/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  download: async (id: number): Promise<ApiResponse> => {
+    return apiRequest(`/resources/${id}/download`, {
+      method: 'POST'
+    });
+  },
+
+  getCategories: async (): Promise<ApiResponse<string[]>> => {
+    return apiRequest('/resources/categories');
   }
 };
 
@@ -810,5 +886,8 @@ export type {
   ContactRequest,
   Post,
   CreatePostRequest,
-  UpdatePostRequest
+  UpdatePostRequest,
+  Resource,
+  CreateResourceRequest,
+  UpdateResourceRequest
 };

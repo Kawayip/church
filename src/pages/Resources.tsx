@@ -1,94 +1,16 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Download, Search, Filter, BookOpen, Music, Video, Calendar } from 'lucide-react';
+import { FileText, Download, Search, Filter, BookOpen, Music, Video, Calendar, Loader2, AlertCircle } from 'lucide-react';
+import { resourcesAPI, filesAPI, type Resource } from '../services/api';
 
 export const Resources: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-
-  const resources = [
-    {
-      id: 1,
-      title: 'Weekly Bulletin - January 4, 2025',
-      description: 'Order of service, announcements, and prayer requests for this week\'s Sabbath service.',
-      category: 'bulletins',
-      type: 'pdf',
-      date: '2025-01-04',
-      size: '2.3 MB',
-      downloads: 145
-    },
-    {
-      id: 2,
-      title: 'Sermon: Walking by Faith',
-      description: 'Pastor John\'s inspiring message about trusting God in uncertain times.',
-      category: 'sermons',
-      type: 'audio',
-      date: '2025-01-01',
-      size: '45.2 MB',
-      downloads: 289
-    },
-    {
-      id: 3,
-      title: 'Bible Study Guide: Book of Daniel',
-      description: 'Comprehensive 13-week study guide exploring the prophetic book of Daniel.',
-      category: 'study-guides',
-      type: 'pdf',
-      date: '2024-12-15',
-      size: '5.7 MB',
-      downloads: 432
-    },
-    {
-      id: 4,
-      title: 'Children\'s Sabbath School Materials',
-      description: 'Lesson plans, activities, and crafts for children ages 5-12.',
-      category: 'sabbath-school',
-      type: 'zip',
-      date: '2025-01-01',
-      size: '12.4 MB',
-      downloads: 78
-    },
-    {
-      id: 5,
-      title: 'Hymnal Collection - Traditional Favorites',
-      description: 'Sheet music and audio recordings of beloved traditional hymns.',
-      category: 'music',
-      type: 'zip',
-      date: '2024-12-20',
-      size: '87.3 MB',
-      downloads: 203
-    },
-    {
-      id: 6,
-      title: 'Health Ministry: Plant-Based Recipes',
-      description: 'Delicious and nutritious plant-based recipes for healthy living.',
-      category: 'health',
-      type: 'pdf',
-      date: '2024-12-10',
-      size: '3.1 MB',
-      downloads: 167
-    },
-    {
-      id: 7,
-      title: 'Youth Ministry Devotional',
-      description: 'Daily devotions specifically designed for teenagers and young adults.',
-      category: 'youth',
-      type: 'pdf',
-      date: '2024-12-25',
-      size: '2.8 MB',
-      downloads: 124
-    },
-    {
-      id: 8,
-      title: 'Evangelism Training Video Series',
-      description: 'Complete video course on effective personal evangelism methods.',
-      category: 'training',
-      type: 'video',
-      date: '2024-11-30',
-      size: '1.2 GB',
-      downloads: 89
-    }
-  ];
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState<number | null>(null);
 
   const categories = [
     { id: 'all', name: 'All Resources', icon: FileText },
@@ -102,12 +24,73 @@ export const Resources: React.FC = () => {
     { id: 'training', name: 'Training', icon: Video }
   ];
 
-  const filteredResources = resources.filter(resource => {
-    const matchesSearch = resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         resource.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || resource.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // Fetch resources from API
+  const fetchResources = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const params: any = {};
+      if (selectedCategory !== 'all') {
+        params.category = selectedCategory;
+      }
+      if (searchTerm) {
+        params.search = searchTerm;
+      }
+      
+      const response = await resourcesAPI.getAll(params);
+      
+      if (response.success && response.data) {
+        setResources(response.data);
+      } else {
+        setError(response.message || 'Failed to fetch resources');
+      }
+    } catch (err) {
+      setError('Failed to fetch resources. Please try again.');
+      console.error('Error fetching resources:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle download
+  const handleDownload = async (resource: Resource) => {
+    try {
+      setDownloading(resource.id);
+      
+      // Track download
+      await resourcesAPI.download(resource.id);
+      
+      // Get the file URL and trigger download
+      const fileUrl = filesAPI.getResource(resource.id);
+      
+      // Create a temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = resource.fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Update the resource's download count locally
+      setResources(prev => prev.map(r => 
+        r.id === resource.id 
+          ? { ...r, downloadCount: r.downloadCount + 1 }
+          : r
+      ));
+      
+    } catch (err) {
+      console.error('Error downloading resource:', err);
+      alert('Failed to download resource. Please try again.');
+    } finally {
+      setDownloading(null);
+    }
+  };
+
+  // Fetch resources when component mounts or filters change
+  useEffect(() => {
+    fetchResources();
+  }, [selectedCategory, searchTerm]);
 
   const getFileIcon = (type: string) => {
     switch (type) {
@@ -123,9 +106,26 @@ export const Resources: React.FC = () => {
       case 'audio': return 'text-blue-400';
       case 'video': return 'text-purple-400';
       case 'zip': return 'text-yellow-400';
+      case 'doc': return 'text-blue-600';
+      case 'image': return 'text-green-400';
       default: return 'text-gray-400';
     }
   };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const filteredResources = resources.filter(resource => {
+    const matchesSearch = resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (resource.description && resource.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesCategory = selectedCategory === 'all' || resource.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <div className="pt-16">
@@ -189,58 +189,87 @@ export const Resources: React.FC = () => {
       {/* Resources Grid */}
       <section className="py-20 bg-white dark:bg-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredResources.map((resource, index) => {
-              const FileIcon = getFileIcon(resource.type);
-              return (
-                <motion.div
-                  key={resource.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="card p-6 hover:scale-105 transition-all duration-300 group"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className={`p-3 rounded-lg bg-gray-100 dark:bg-slate-700 ${getFileColor(resource.type)}`}>
-                      <FileIcon className="h-6 w-6" />
-                    </div>
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full uppercase ${getFileColor(resource.type)} bg-gray-100 dark:bg-slate-700`}>
-                      {resource.type}
-                    </span>
-                  </div>
-
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                    {resource.title}
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2">
-                    {resource.description}
-                  </p>
-
-                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-4">
-                    <span>{new Date(resource.date).toLocaleDateString()}</span>
-                    <span>{resource.size}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {resource.downloads} downloads
-                    </span>
-                    <button className="btn-primary flex items-center space-x-2 text-sm px-4 py-2">
-                      <Download className="h-4 w-4" />
-                      <span>Download</span>
-                    </button>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-
-          {filteredResources.length === 0 && (
+          {loading ? (
             <div className="text-center py-12">
-              <FileText className="h-16 w-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">No resources found</h3>
-              <p className="text-gray-500 dark:text-gray-500">Try adjusting your search or filter criteria.</p>
+              <Loader2 className="h-12 w-12 text-emerald-600 animate-spin mx-auto mb-4" />
+              <p className="text-gray-600 dark:text-gray-400">Loading resources...</p>
             </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-red-600 dark:text-red-400 mb-2">Error Loading Resources</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+              <button 
+                onClick={fetchResources}
+                className="btn-primary"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredResources.map((resource, index) => {
+                  const FileIcon = getFileIcon(resource.fileType);
+                  return (
+                    <motion.div
+                      key={resource.id}
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: index * 0.1 }}
+                      className="card p-6 hover:scale-105 transition-all duration-300 group"
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className={`p-3 rounded-lg bg-gray-100 dark:bg-slate-700 ${getFileColor(resource.fileType)}`}>
+                          <FileIcon className="h-6 w-6" />
+                        </div>
+                        <span className={`text-xs font-medium px-2 py-1 rounded-full uppercase ${getFileColor(resource.fileType)} bg-gray-100 dark:bg-slate-700`}>
+                          {resource.fileType}
+                        </span>
+                      </div>
+
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                        {resource.title}
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2">
+                        {resource.description || 'No description available'}
+                      </p>
+
+                      <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-4">
+                        <span>{new Date(resource.created_at).toLocaleDateString()}</span>
+                        <span>{formatFileSize(resource.fileSize)}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {resource.downloadCount} downloads
+                        </span>
+                        <button 
+                          onClick={() => handleDownload(resource)}
+                          disabled={downloading === resource.id}
+                          className="btn-primary flex items-center space-x-2 text-sm px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {downloading === resource.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Download className="h-4 w-4" />
+                          )}
+                          <span>{downloading === resource.id ? 'Downloading...' : 'Download'}</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {filteredResources.length === 0 && (
+                <div className="text-center py-12">
+                  <FileText className="h-16 w-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">No resources found</h3>
+                  <p className="text-gray-500 dark:text-gray-500">Try adjusting your search or filter criteria.</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>
@@ -260,7 +289,7 @@ export const Resources: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {resources
-              .sort((a, b) => b.downloads - a.downloads)
+              .sort((a, b) => b.downloadCount - a.downloadCount)
               .slice(0, 3)
               .map((resource, index) => (
                 <motion.div
@@ -274,9 +303,13 @@ export const Resources: React.FC = () => {
                     <span className="text-2xl font-bold text-white">#{index + 1}</span>
                   </div>
                   <h3 className="text-lg font-semibold text-white mb-2">{resource.title}</h3>
-                  <p className="text-emerald-100 text-sm mb-4">{resource.downloads} downloads</p>
-                  <button className="bg-white text-emerald-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-50 transition-all duration-200">
-                    Download Now
+                  <p className="text-emerald-100 text-sm mb-4">{resource.downloadCount} downloads</p>
+                  <button 
+                    onClick={() => handleDownload(resource)}
+                    disabled={downloading === resource.id}
+                    className="bg-white text-emerald-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {downloading === resource.id ? 'Downloading...' : 'Download Now'}
                   </button>
                 </motion.div>
               ))}
