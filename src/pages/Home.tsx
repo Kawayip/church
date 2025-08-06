@@ -17,10 +17,14 @@ export const Home: React.FC = () => {
   const [eventsError, setEventsError] = useState<string | null>(null);
   
   // Background images for carousel
+  // Replace these paths with your own images
+  // Place your images in: src/assets/images/hero/
+  // Recommended image names: hero-bg-1.jpg, hero-bg-2.jpg, hero-bg-3.jpg
+  // Recommended size: 1920x1080px or larger, landscape orientation
   const backgroundImages = [
-    'https://images.pexels.com/photos/8466704/pexels-photo-8466704.jpeg',
-    'https://images.pexels.com/photos/1029243/pexels-photo-1029243.jpeg',
-    'https://images.pexels.com/photos/1029245/pexels-photo-1029245.jpeg'
+    '/src/assets/images/hero/hero-bg-1.jpg',  // Replace with your church image
+    '/src/assets/images/hero/hero-bg-2.jpg',  // Replace with your church image  
+    '/src/assets/images/hero/hero-bg-3.jpg'   // Replace with your church image
   ];
 
   // Test if images are loading
@@ -122,7 +126,7 @@ export const Home: React.FC = () => {
   return (
     <div className="pt-16">
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center section-light overflow-hidden">
+      <section className="relative min-h-screen flex items-center justify-center section-light overflow-hidden mb-8 md:mb-12">
         {/* Background Image Carousel */}
         <AnimatePresence mode="wait">
           <motion.div
@@ -174,7 +178,7 @@ export const Home: React.FC = () => {
               />
             </motion.div>
             <motion.h1 
-              className="text-5xl md:text-7xl heading-primary text-white mb-6 hero-text-shadow-lg"
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl heading-primary text-white mb-4 md:mb-6 hero-text-shadow-lg"
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
@@ -183,11 +187,12 @@ export const Home: React.FC = () => {
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.6 }}
+                className="block text-xl sm:text-2xl md:text-3xl lg:text-4xl"
               >
                 Welcome to
               </motion.span>
               <motion.span 
-                className="block text-white hero-text-shadow-lg hero-text-glow"
+                className="block text-white hero-text-shadow-lg hero-text-glow text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl"
                 initial={{ opacity: 0, x: 50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.8 }}
@@ -197,7 +202,7 @@ export const Home: React.FC = () => {
               </motion.span>
             </motion.h1>
             <motion.p 
-              className="text-xl md:text-2xl text-body text-white mb-8 max-w-4xl mx-auto leading-relaxed hero-text-shadow"
+              className="text-base sm:text-lg md:text-xl lg:text-2xl text-body text-white mb-6 md:mb-8 max-w-4xl mx-auto leading-relaxed hero-text-shadow px-4"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1.0 }}
@@ -213,37 +218,85 @@ export const Home: React.FC = () => {
             transition={{ duration: 0.6, delay: 1.2 }}
             className="flex flex-wrap justify-center items-center gap-4 mb-12"
           >
+            {/* Learn More Button - Floating Up and Down */}
             <motion.div
-              whileHover={{ scale: 1.05 }}
+              animate={{
+                y: [-10, 10, -10],
+                rotate: [-2, 2, -2]
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              whileHover={{ 
+                scale: 1.1,
+                rotate: 0,
+                transition: { duration: 0.3 }
+              }}
               whileTap={{ scale: 0.95 }}
             >
               <Link
                 to="/about"
-                className="btn-primary flex items-center justify-center group whitespace-nowrap"
+                className="btn-primary flex items-center justify-center group whitespace-nowrap shadow-lg hover:shadow-xl"
               >
                 Learn More About Us
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Link>
             </motion.div>
+
+            {/* Watch Live Button - Floating Side to Side */}
             <motion.div
-              whileHover={{ scale: 1.05 }}
+              animate={{
+                x: [-8, 8, -8],
+                y: [0, -5, 0]
+              }}
+              transition={{
+                duration: 3.5,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              whileHover={{ 
+                scale: 1.1,
+                x: 0,
+                y: 0,
+                transition: { duration: 0.3 }
+              }}
               whileTap={{ scale: 0.95 }}
             >
               <Link
                 to="/live"
-                className="flex items-center justify-center space-x-2 bg-red-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition-all duration-200 whitespace-nowrap"
+                className="flex items-center justify-center space-x-2 bg-red-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition-all duration-200 whitespace-nowrap shadow-lg hover:shadow-xl"
               >
                 <Play className="h-5 w-5" />
                 <span>Watch Live</span>
               </Link>
             </motion.div>
+
+            {/* Upcoming Events Button - Floating in Circle */}
             <motion.div
-              whileHover={{ scale: 1.05 }}
+              animate={{
+                x: [0, 5, 0, -5, 0],
+                y: [0, -5, 0, 5, 0],
+                rotate: [0, 1, 0, -1, 0]
+              }}
+              transition={{
+                duration: 5,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              whileHover={{ 
+                scale: 1.1,
+                x: 0,
+                y: 0,
+                rotate: 0,
+                transition: { duration: 0.3 }
+              }}
               whileTap={{ scale: 0.95 }}
             >
               <Link
                 to="/events"
-                className="btn-secondary whitespace-nowrap"
+                className="btn-secondary whitespace-nowrap shadow-lg hover:shadow-xl"
               >
                 Upcoming Events
               </Link>
@@ -276,12 +329,134 @@ export const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Services Section */}
-      <section className="py-20 bg-white dark:bg-slate-900">
+      {/* Floating Running Cards */}
+      <section className="py-8 md:py-12 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-slate-800 dark:to-slate-700 overflow-hidden mb-8 md:mb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div {...fadeInUp} className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Join Our Weekly Services</h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-8"
+          >
+            <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">What's Happening</h3>
+            <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">Stay updated with our latest activities</p>
+          </motion.div>
+          
+          <div className="flex space-x-6 overflow-x-auto pb-4 scrollbar-hide">
+            {/* Running Card 1 */}
+            <Link to="/events">
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                className="flex-shrink-0 w-72 md:w-80 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 p-4 md:p-6 hover:shadow-xl transition-all duration-300 cursor-pointer"
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center">
+                    <Calendar className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 dark:text-white">Upcoming Events</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Check out our latest events</p>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-emerald-500" />
+                </div>
+              </motion.div>
+            </Link>
+
+            {/* Running Card 2 */}
+            <Link to="/ministries">
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="flex-shrink-0 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 p-6 hover:shadow-xl transition-all duration-300 cursor-pointer"
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 dark:text-white">Ministries</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Get involved in our ministries</p>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-purple-500" />
+                </div>
+              </motion.div>
+            </Link>
+
+            {/* Running Card 3 */}
+            <Link to="/resources">
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                className="flex-shrink-0 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 p-6 hover:shadow-xl transition-all duration-300 cursor-pointer"
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg flex items-center justify-center">
+                    <BookOpen className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 dark:text-white">Resources</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Access study materials</p>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-amber-500" />
+                </div>
+              </motion.div>
+            </Link>
+
+            {/* Running Card 4 */}
+            <Link to="/e-giving">
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="flex-shrink-0 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 p-6 hover:shadow-xl transition-all duration-300 cursor-pointer"
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
+                    <Heart className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 dark:text-white">Give</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Support our mission</p>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-blue-500" />
+                </div>
+              </motion.div>
+            </Link>
+
+            {/* Running Card 5 */}
+            <Link to="/live">
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="flex-shrink-0 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 p-6 hover:shadow-xl transition-all duration-300 cursor-pointer"
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-pink-500 rounded-lg flex items-center justify-center">
+                    <Play className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 dark:text-white">Live Stream</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Join us online</p>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-red-500" />
+                </div>
+              </motion.div>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Services Section */}
+      <section className="py-12 md:py-20 bg-white dark:bg-slate-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div {...fadeInUp} className="text-center mb-12 md:mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-3 md:mb-4">Join Our Weekly Services</h2>
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto px-4">
               Experience meaningful worship and grow in faith with our church family every week
             </p>
           </motion.div>
@@ -293,13 +468,13 @@ export const Home: React.FC = () => {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.2 }}
-                className="card p-8 hover:scale-105 transition-all duration-300 group"
+                className="card p-6 md:p-8 hover:scale-105 transition-all duration-300 group"
               >
                 <div className={`w-16 h-16 bg-gradient-to-r ${service.color} rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
                   <service.icon className="h-8 w-8 text-white" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">{service.title}</h3>
-                <p className="text-gray-600 dark:text-gray-300 mb-4">{service.description}</p>
+                <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mb-3">{service.title}</h3>
+                <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 mb-4">{service.description}</p>
                 <div className="text-emerald-600 dark:text-emerald-400 font-semibold">{service.time}</div>
               </motion.div>
             ))}
@@ -308,7 +483,7 @@ export const Home: React.FC = () => {
       </section>
 
       {/* Pastor's Message Section */}
-      <section className="py-20 section-accent text-white">
+      <section className="py-12 md:py-20 section-accent text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <motion.div
@@ -318,7 +493,7 @@ export const Home: React.FC = () => {
               className="relative"
             >
               <div className="relative">
-                <div className="w-80 h-80 mx-auto rounded-full overflow-hidden border-4 border-white/20 shadow-2xl">
+                <div className="w-64 h-64 md:w-80 md:h-80 mx-auto rounded-full overflow-hidden border-4 border-white/20 shadow-2xl">
                   <img 
                     src={getTeamImage('pastor')} 
                     alt="Pastor Kiragga Christo" 
@@ -333,10 +508,10 @@ export const Home: React.FC = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
             >
-              <h2 className="text-4xl font-bold mb-6">A Message from Our Pastor</h2>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 md:mb-6">A Message from Our Pastor</h2>
               <blockquote className="relative mb-8">
                 <div className="absolute -left-4 top-0 text-6xl text-white/20 font-serif">"</div>
-                <p className="text-xl leading-relaxed text-emerald-100 pl-8 italic">
+                <p className="text-base sm:text-lg md:text-xl leading-relaxed text-emerald-100 pl-4 md:pl-8 italic">
                 To have a church that is mission-oriented, understanding the significance of these end times, is a calling we must embrace wholeheartedly. As the hymn reminds us, ‘Let us labor for the Master from dawn till setting sun; let us speak of His wondrous love and care.’ When the Lord returns, may we hear those blessed words: ‘Well done, good and faithful servant.’
 
 <br></br>May God’s blessings be upon us all as we step into a new year, striving for a renewed spirit and a deeper relationship with Him. Wishing you a happy new year and a transformed, joyful ‘new you’ in Christ.
@@ -353,11 +528,11 @@ export const Home: React.FC = () => {
       </section>
 
       {/* Upcoming Events */}
-      <section className="py-20 section-light">
+      <section className="py-12 md:py-20 section-light">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div {...fadeInUp} className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Upcoming Events</h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          <motion.div {...fadeInUp} className="text-center mb-12 md:mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-3 md:mb-4">Upcoming Events</h2>
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto px-4">
               Join us for special services, community outreach, and fellowship opportunities
             </p>
             {upcomingEvents.length > 0 && (

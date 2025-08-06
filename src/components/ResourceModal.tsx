@@ -4,12 +4,14 @@ import { X, Upload, FileText, Loader2, AlertCircle } from 'lucide-react';
 import { resourcesAPI, filesAPI, type Resource, type CreateResourceRequest } from '../services/api';
 
 interface ResourceModalProps {
+  isOpen: boolean;
   resource?: Resource | null;
   onSuccess: () => void;
   onClose: () => void;
 }
 
 export const ResourceModal: React.FC<ResourceModalProps> = ({
+  isOpen,
   resource,
   onSuccess,
   onClose
@@ -17,9 +19,9 @@ export const ResourceModal: React.FC<ResourceModalProps> = ({
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    category: 'other' as const,
-    fileType: 'pdf' as const,
-    isFeatured: false
+    category: 'other' as 'bulletins' | 'sermons' | 'study-guides' | 'sabbath-school' | 'music' | 'health' | 'youth' | 'training' | 'other',
+    file_type: 'pdf' as 'pdf' | 'doc' | 'video' | 'audio' | 'image' | 'zip',
+    is_featured: false
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -34,8 +36,8 @@ export const ResourceModal: React.FC<ResourceModalProps> = ({
         title: resource.title,
         description: resource.description || '',
         category: resource.category,
-        fileType: resource.fileType,
-        isFeatured: resource.isFeatured
+        file_type: resource.file_type,
+        is_featured: resource.is_featured
       });
     }
   }, [resource]);
@@ -68,7 +70,7 @@ export const ResourceModal: React.FC<ResourceModalProps> = ({
         'zip': 'zip'
       };
       const detectedType = fileTypeMap[extension || ''] || 'other';
-      setFormData(prev => ({ ...prev, fileType: detectedType as any }));
+      setFormData(prev => ({ ...prev, file_type: detectedType as any }));
     }
   };
 
@@ -110,7 +112,7 @@ export const ResourceModal: React.FC<ResourceModalProps> = ({
           title: formData.title,
           description: formData.description,
           category: formData.category,
-          isFeatured: formData.isFeatured
+          isFeatured: formData.is_featured
         });
 
         if (response.success) {
@@ -128,13 +130,13 @@ export const ResourceModal: React.FC<ResourceModalProps> = ({
         const resourceData: CreateResourceRequest = {
           title: formData.title,
           description: formData.description,
-          fileType: formData.fileType,
+          fileType: formData.file_type,
           category: formData.category,
           fileData,
           mimeType: selectedFile.type,
           fileName: selectedFile.name,
           fileSize: selectedFile.size,
-          isFeatured: formData.isFeatured
+          isFeatured: formData.is_featured
         };
 
         const response = await resourcesAPI.create(resourceData);
@@ -176,24 +178,26 @@ export const ResourceModal: React.FC<ResourceModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 overflow-y-auto">
-        <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          {/* Background overlay */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-            onClick={onClose}
-          />
+      {isOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            {/* Background overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+              onClick={onClose}
+            />
 
-          {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="inline-block align-bottom bg-white dark:bg-slate-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full"
-          >
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative inline-block align-bottom bg-white dark:bg-slate-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full z-10"
+              onClick={(e) => e.stopPropagation()}
+            >
             <div className="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
@@ -207,7 +211,7 @@ export const ResourceModal: React.FC<ResourceModalProps> = ({
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6" onClick={(e) => e.stopPropagation()}>
                 {/* Title */}
                 <div>
                   <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -325,14 +329,14 @@ export const ResourceModal: React.FC<ResourceModalProps> = ({
                     <label htmlFor="fileType" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       File Type *
                     </label>
-                    <select
-                      id="fileType"
-                      name="fileType"
-                      value={formData.fileType}
-                      onChange={handleInputChange}
-                      required
-                      className="form-select w-full"
-                    >
+                                         <select
+                       id="file_type"
+                       name="file_type"
+                       value={formData.file_type}
+                       onChange={handleInputChange}
+                       required
+                       className="form-select w-full"
+                     >
                       {fileTypes.map(type => (
                         <option key={type.value} value={type.value}>
                           {type.label}
@@ -344,17 +348,17 @@ export const ResourceModal: React.FC<ResourceModalProps> = ({
 
                 {/* Featured */}
                 <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="isFeatured"
-                    name="isFeatured"
-                    checked={formData.isFeatured}
-                    onChange={handleInputChange}
-                    className="form-checkbox h-4 w-4 text-emerald-600"
-                  />
-                  <label htmlFor="isFeatured" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                    Mark as featured resource
-                  </label>
+                                     <input
+                     type="checkbox"
+                     id="is_featured"
+                     name="is_featured"
+                     checked={formData.is_featured}
+                     onChange={handleInputChange}
+                     className="form-checkbox h-4 w-4 text-emerald-600"
+                   />
+                                     <label htmlFor="is_featured" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                     Mark as featured resource
+                   </label>
                 </div>
 
                 {/* Error Message */}
@@ -389,6 +393,7 @@ export const ResourceModal: React.FC<ResourceModalProps> = ({
           </motion.div>
         </div>
       </div>
+      )}
     </AnimatePresence>
   );
 }; 

@@ -379,13 +379,12 @@ export const AdminDashboard: React.FC = () => {
             )}
 
             {/* Resource Modal */}
-            {isResourceModalOpen && (
-              <ResourceModal
-                resource={selectedResource}
-                onSuccess={handleResourceModalSuccess}
-                onClose={handleCloseResourceModal}
-              />
-            )}
+            <ResourceModal
+              isOpen={isResourceModalOpen}
+              resource={selectedResource}
+              onSuccess={handleResourceModalSuccess}
+              onClose={handleCloseResourceModal}
+            />
           </div>
         );
       

@@ -167,7 +167,7 @@ export const Footer: React.FC = () => {
               <p className="text-gray-300">All rights reserved.</p>
             </div>
             <div className="text-sm text-gray-300">
-              Powered By <a href="https://codecraftersko.com" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-emerald-400 transition-colors">Code Creaters Ug.</a>
+              Powered By <a href="https://codecraftersko.com" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-emerald-400 transition-colors">Code Crafters Ug.</a>
             </div>
           </div>
         </div>

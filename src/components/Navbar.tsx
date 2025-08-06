@@ -19,15 +19,15 @@ export const Navbar: React.FC = () => {
     { name: 'Posts', path: '/posts' },
     { name: 'Resources', path: '/resources', hasDropdown: true },
     { name: 'Gallery', path: '/gallery' },
-    { name: 'Baptism', path: '/baptism' },
+    // { name: 'Baptism', path: '/baptism' }, // Hidden for now
     { name: 'Give', path: '/e-giving' },
     { name: 'Contact', path: '/contact' },
   ];
 
   const resourcesDropdownItems = [
     { name: 'Study Materials', path: '/resources' },
-    { name: 'Sermons', path: '/sermons' },
-    { name: 'Sabbath School', path: '/sabbath-school' },
+    // { name: 'Sermons', path: '/sermons' }, // Hidden for now
+    // { name: 'Sabbath School', path: '/sabbath-school' }, // Hidden for now
   ];
 
   const isActive = (path: string) => location.pathname === path;

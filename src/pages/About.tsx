@@ -112,7 +112,7 @@ export const About: React.FC = () => {
             >
               <div className="h-48 bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
                 <img 
-                  src="/src/assets/images/ui/default-avatar.png" 
+                  src="/src/assets/images/ui/adults.jpg" 
                   alt="Main Adult Church"
                   className="w-full h-full object-cover"
                 />
@@ -120,7 +120,7 @@ export const About: React.FC = () => {
               <div className="p-6">
                 <h3 className="text-xl font-semibold text-emerald-600 dark:text-emerald-400 mb-3">Main Adult Church</h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Our primary congregation for adults, featuring traditional worship services, 
+                  Our primary congregation for adults, featuring the main Sabbath worship service, 
                   in-depth Bible study, and mature spiritual fellowship for all adult members.
                 </p>
               </div>
@@ -134,7 +134,7 @@ export const About: React.FC = () => {
             >
               <div className="h-48 bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
                 <img 
-                  src="/src/assets/images/ui/default-avatar.png" 
+                  src="/src/assets/images/ui/ambassadors.jpg" 
                   alt="Ambassadors Church"
                   className="w-full h-full object-cover"
                 />
@@ -156,7 +156,7 @@ export const About: React.FC = () => {
             >
               <div className="h-48 bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
                 <img 
-                  src="/src/assets/images/ui/default-avatar.png" 
+                  src="/src/assets/images/ui/children.jpg" 
                   alt="Children's Church"
                   className="w-full h-full object-cover"
                 />
@@ -197,7 +197,7 @@ export const About: React.FC = () => {
             >
               <div className="h-80 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl overflow-hidden">
                 <img 
-                  src="/src/assets/images/ui/default-avatar.png" 
+                  src="/src/assets/images/ui/worship.jpg" 
                   alt="Worship Service"
                   className="w-full h-full object-cover"
                 />
@@ -272,7 +272,7 @@ export const About: React.FC = () => {
             >
               <div className="h-80 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl overflow-hidden">
                 <img 
-                  src="/src/assets/images/ui/default-avatar.png" 
+                  src="/src/assets/images/ui/fellowship.jpg" 
                   alt="Fellowship Activities"
                   className="w-full h-full object-cover"
                 />
@@ -309,7 +309,7 @@ export const About: React.FC = () => {
             >
               <div className="h-40 bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
                 <img 
-                  src="/src/assets/images/ui/default-avatar.png" 
+                  src="/src/assets/images/ui/sabbathschool1.jpg" 
                   alt="Sabbath School"
                   className="w-full h-full object-cover"
                 />
@@ -330,7 +330,7 @@ export const About: React.FC = () => {
             >
               <div className="h-40 bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
                 <img 
-                  src="/src/assets/images/ui/default-avatar.png" 
+                  src="/src/assets/images/ui/youth.jpg" 
                   alt="Youth Programs"
                   className="w-full h-full object-cover"
                 />
@@ -351,7 +351,7 @@ export const About: React.FC = () => {
             >
               <div className="h-40 bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
                 <img 
-                  src="/src/assets/images/ui/default-avatar.png" 
+                  src="/src/assets/images/ui/outreach.jpg" 
                   alt="Community Outreach"
                   className="w-full h-full object-cover"
                 />
@@ -372,7 +372,7 @@ export const About: React.FC = () => {
             >
               <div className="h-40 bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
                 <img 
-                  src="/src/assets/images/ui/default-avatar.png" 
+                  src="/src/assets/images/ui/fellowship.jpg" 
                   alt="Fellowship Events"
                   className="w-full h-full object-cover"
                 />

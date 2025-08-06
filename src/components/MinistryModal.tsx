@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Upload, Trash2 } from 'lucide-react';
-import { useForm } from 'react-hook-form';
 import { ministriesAPI, Ministry, CreateMinistryRequest, UpdateMinistryRequest } from '../services/api';
 
 interface MinistryModalProps {
@@ -21,15 +20,20 @@ export const MinistryModal: React.FC<MinistryModalProps> = ({
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [removeImage, setRemoveImage] = useState(false);
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-    setValue,
-    watch
-  } = useForm<CreateMinistryRequest>();
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    long_description: '',
+    leader_name: '',
+    leader_email: '',
+    leader_phone: '',
+    meeting_time: '',
+    meeting_location: '',
+    contact_info: '',
+    requirements: '',
+    age_group: '',
+    status: 'active' as 'active' | 'inactive'
+  });
 
   const isEditing = Boolean(ministry && ministry.id);
 
@@ -37,7 +41,7 @@ export const MinistryModal: React.FC<MinistryModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       // Always reset form first
-      reset({
+      setFormData({
         name: '',
         description: '',
         long_description: '',
@@ -54,21 +58,20 @@ export const MinistryModal: React.FC<MinistryModalProps> = ({
 
       // Then populate if editing
       if (ministry && ministry.id) {
-        // Use setTimeout to ensure reset is complete before setting values
-        setTimeout(() => {
-          setValue('name', ministry.name || '');
-          setValue('description', ministry.description || '');
-          setValue('long_description', ministry.long_description || '');
-          setValue('leader_name', ministry.leader_name || '');
-          setValue('leader_email', ministry.leader_email || '');
-          setValue('leader_phone', ministry.leader_phone || '');
-          setValue('meeting_time', ministry.meeting_time || '');
-          setValue('meeting_location', ministry.meeting_location || '');
-          setValue('contact_info', ministry.contact_info || '');
-          setValue('requirements', ministry.requirements || '');
-          setValue('age_group', ministry.age_group || '');
-          setValue('status', ministry.status || 'active');
-        }, 0);
+        setFormData({
+          name: ministry.name || '',
+          description: ministry.description || '',
+          long_description: ministry.long_description || '',
+          leader_name: ministry.leader_name || '',
+          leader_email: ministry.leader_email || '',
+          leader_phone: ministry.leader_phone || '',
+          meeting_time: ministry.meeting_time || '',
+          meeting_location: ministry.meeting_location || '',
+          contact_info: ministry.contact_info || '',
+          requirements: ministry.requirements || '',
+          age_group: ministry.age_group || '',
+          status: ministry.status || 'active'
+        });
       }
 
       // Reset image states
@@ -76,7 +79,7 @@ export const MinistryModal: React.FC<MinistryModalProps> = ({
       setSelectedImage(null);
       setImagePreview(null);
     }
-  }, [isOpen, ministry?.id, setValue, reset]);
+  }, [isOpen, ministry?.id]);
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -117,10 +120,21 @@ export const MinistryModal: React.FC<MinistryModalProps> = ({
     }
   };
 
-  const onSubmit = async (data: CreateMinistryRequest) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     try {
       setLoading(true);
 
+      const data: CreateMinistryRequest = { ...formData };
       if (selectedImage) {
         data.featured_image = selectedImage;
       }
@@ -157,8 +171,7 @@ export const MinistryModal: React.FC<MinistryModalProps> = ({
     onClose();
   };
 
-  // Watch form values for debugging
-  const formValues = watch();
+
 
   return (
     <AnimatePresence>
@@ -191,7 +204,7 @@ export const MinistryModal: React.FC<MinistryModalProps> = ({
                   </button>
                 </div>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Basic Information */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -200,13 +213,13 @@ export const MinistryModal: React.FC<MinistryModalProps> = ({
                       </label>
                       <input
                         type="text"
-                        {...register('name', { required: 'Ministry name is required' })}
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        required
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                         placeholder="Enter ministry name"
                       />
-                      {errors.name && (
-                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.name.message}</p>
-                      )}
                     </div>
 
                     <div>
@@ -214,7 +227,9 @@ export const MinistryModal: React.FC<MinistryModalProps> = ({
                         Status
                       </label>
                       <select
-                        {...register('status')}
+                        name="status"
+                        value={formData.status}
+                        onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                       >
                         <option value="active">Active</option>
@@ -228,27 +243,29 @@ export const MinistryModal: React.FC<MinistryModalProps> = ({
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Short Description *
                     </label>
-                    <textarea
-                      {...register('description', { required: 'Description is required' })}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      placeholder="Brief description of the ministry"
-                    />
-                    {errors.description && (
-                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.description.message}</p>
-                    )}
+                                         <textarea
+                       name="description"
+                       value={formData.description}
+                       onChange={handleInputChange}
+                       required
+                       rows={3}
+                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                       placeholder="Brief description of the ministry"
+                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Long Description
                     </label>
-                    <textarea
-                      {...register('long_description')}
-                      rows={5}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      placeholder="Detailed description of the ministry's purpose and activities"
-                    />
+                                         <textarea
+                       name="long_description"
+                       value={formData.long_description}
+                       onChange={handleInputChange}
+                       rows={5}
+                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                       placeholder="Detailed description of the ministry's purpose and activities"
+                     />
                   </div>
 
                   {/* Leader Information */}
@@ -257,36 +274,42 @@ export const MinistryModal: React.FC<MinistryModalProps> = ({
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Leader Name
                       </label>
-                      <input
-                        type="text"
-                        {...register('leader_name')}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                        placeholder="Leader's full name"
-                      />
+                                             <input
+                         type="text"
+                         name="leader_name"
+                         value={formData.leader_name}
+                         onChange={handleInputChange}
+                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                         placeholder="Leader's full name"
+                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Leader Email
                       </label>
-                      <input
-                        type="email"
-                        {...register('leader_email')}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                        placeholder="leader@email.com"
-                      />
+                                             <input
+                         type="email"
+                         name="leader_email"
+                         value={formData.leader_email}
+                         onChange={handleInputChange}
+                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                         placeholder="leader@email.com"
+                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Leader Phone
                       </label>
-                      <input
-                        type="tel"
-                        {...register('leader_phone')}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                        placeholder="+256 701 234 567"
-                      />
+                                             <input
+                         type="tel"
+                         name="leader_phone"
+                         value={formData.leader_phone}
+                         onChange={handleInputChange}
+                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                         placeholder="+256 701 234 567"
+                       />
                     </div>
                   </div>
 
@@ -296,24 +319,28 @@ export const MinistryModal: React.FC<MinistryModalProps> = ({
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Meeting Time
                       </label>
-                      <input
-                        type="text"
-                        {...register('meeting_time')}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                        placeholder="e.g., Every Sabbath 2:00 PM"
-                      />
+                                             <input
+                         type="text"
+                         name="meeting_time"
+                         value={formData.meeting_time}
+                         onChange={handleInputChange}
+                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                         placeholder="e.g., Every Sabbath 2:00 PM"
+                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Meeting Location
                       </label>
-                      <input
-                        type="text"
-                        {...register('meeting_location')}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                        placeholder="e.g., Youth Hall"
-                      />
+                                             <input
+                         type="text"
+                         name="meeting_location"
+                         value={formData.meeting_location}
+                         onChange={handleInputChange}
+                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                         placeholder="e.g., Youth Hall"
+                       />
                     </div>
                   </div>
 
@@ -323,24 +350,28 @@ export const MinistryModal: React.FC<MinistryModalProps> = ({
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Age Group
                       </label>
-                      <input
-                        type="text"
-                        {...register('age_group')}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                        placeholder="e.g., 13-30 years"
-                      />
+                                             <input
+                         type="text"
+                         name="age_group"
+                         value={formData.age_group}
+                         onChange={handleInputChange}
+                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                         placeholder="e.g., 13-30 years"
+                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Requirements
                       </label>
-                      <input
-                        type="text"
-                        {...register('requirements')}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                        placeholder="e.g., No prior experience required"
-                      />
+                                             <input
+                         type="text"
+                         name="requirements"
+                         value={formData.requirements}
+                         onChange={handleInputChange}
+                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                         placeholder="e.g., No prior experience required"
+                       />
                     </div>
                   </div>
 
@@ -348,12 +379,14 @@ export const MinistryModal: React.FC<MinistryModalProps> = ({
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Contact Information
                     </label>
-                    <textarea
-                      {...register('contact_info')}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      placeholder="Additional contact information or instructions"
-                    />
+                                         <textarea
+                       name="contact_info"
+                       value={formData.contact_info}
+                       onChange={handleInputChange}
+                       rows={3}
+                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                       placeholder="Additional contact information or instructions"
+                     />
                   </div>
 
                   {/* Image Upload */}
