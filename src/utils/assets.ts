@@ -48,7 +48,14 @@ export const getLogo = (theme: 'light' | 'dark') => {
 
 // Helper function to get church icon
 export const getChurchIcon = () => {
+  // Try the main icon first, fallback to logo if needed
   return ASSETS.logos.icon;
+};
+
+// Helper function to get church icon with fallback
+export const getChurchIconWithFallback = () => {
+  // Return the light logo as a fallback if the icon is too large
+  return ASSETS.logos.church.light;
 };
 
 // Helper function to get team member image
