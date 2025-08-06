@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Church, Play, Calendar, Users, Sun, Moon, ChevronDown } from 'lucide-react';
+import { Menu, X, Church, Play, Calendar, Users, Sun, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../contexts/ThemeContext';
 import { getLogo } from '../utils/assets';
 
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isResourcesOpen, setIsResourcesOpen] = useState(false);
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
 
@@ -17,21 +16,14 @@ export const Navbar: React.FC = () => {
     { name: 'Ministries', path: '/ministries' },
     { name: 'Events', path: '/events' },
     { name: 'Posts', path: '/posts' },
-    { name: 'Resources', path: '/resources', hasDropdown: true },
+    { name: 'Resources', path: '/resources' },
     { name: 'Gallery', path: '/gallery' },
     // { name: 'Baptism', path: '/baptism' }, // Hidden for now
     { name: 'Give', path: '/e-giving' },
     { name: 'Contact', path: '/contact' },
   ];
 
-  const resourcesDropdownItems = [
-    { name: 'Study Materials', path: '/resources' },
-    // { name: 'Sermons', path: '/sermons' }, // Hidden for now
-    // { name: 'Sabbath School', path: '/sabbath-school' }, // Hidden for now
-  ];
-
   const isActive = (path: string) => location.pathname === path;
-  const isResourcesActive = () => resourcesDropdownItems.some(item => isActive(item.path));
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-700 shadow-sm transition-colors duration-300">
@@ -49,58 +41,17 @@ export const Navbar: React.FC = () => {
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-6">
             {navItems.map((item) => (
-              <div key={item.path} className="relative">
-                {item.hasDropdown ? (
-                  <div className="relative">
-                    <button
-                      onClick={() => setIsResourcesOpen(!isResourcesOpen)}
-                      className={`flex items-center space-x-1 text-sm font-medium transition-colors duration-200 ${
-                        isResourcesActive()
-                          ? 'text-emerald-600 dark:text-emerald-400'
-                          : 'text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400'
-                      }`}
-                    >
-                      <span>{item.name}</span>
-                      <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isResourcesOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    
-                    {isResourcesOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 py-2 z-50"
-                      >
-                        {resourcesDropdownItems.map((dropdownItem) => (
-                          <Link
-                            key={dropdownItem.path}
-                            to={dropdownItem.path}
-                            onClick={() => setIsResourcesOpen(false)}
-                            className={`block px-4 py-2 text-sm transition-colors duration-200 ${
-                              isActive(dropdownItem.path)
-                                ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20'
-                                : 'text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-gray-50 dark:hover:bg-slate-700'
-                            }`}
-                          >
-                            {dropdownItem.name}
-                          </Link>
-                        ))}
-                      </motion.div>
-                    )}
-                  </div>
-                ) : (
-                  <Link
-                    to={item.path}
-                    className={`text-sm font-medium transition-colors duration-200 ${
-                      isActive(item.path)
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400'
-                    }`}
-                  >
-                    {item.name}
-                  </Link>
-                )}
-              </div>
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`text-sm font-medium transition-colors duration-200 ${
+                  isActive(item.path)
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400'
+                }`}
+              >
+                {item.name}
+              </Link>
             ))}
             
             {/* Quick Actions */}
@@ -206,53 +157,18 @@ export const Navbar: React.FC = () => {
           >
             <div className="flex flex-col space-y-4">
               {navItems.map((item) => (
-                <div key={item.path}>
-                  {item.hasDropdown ? (
-                    <div>
-                      <button
-                        onClick={() => setIsResourcesOpen(!isResourcesOpen)}
-                        className={`flex items-center justify-between w-full text-sm font-medium transition-colors duration-200 px-4 py-2 ${
-                          isResourcesActive()
-                            ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20'
-                            : 'text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-gray-50 dark:hover:bg-slate-700'
-                        }`}
-                      >
-                        <span>{item.name}</span>
-                        <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isResourcesOpen ? 'rotate-180' : ''}`} />
-                      </button>
-                      {isResourcesOpen && (
-                        <div className="pl-4 space-y-2">
-                          {resourcesDropdownItems.map((dropdownItem) => (
-                            <Link
-                              key={dropdownItem.path}
-                              to={dropdownItem.path}
-                              onClick={() => setIsOpen(false)}
-                              className={`block px-4 py-2 text-sm transition-colors duration-200 ${
-                                isActive(dropdownItem.path)
-                                  ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20'
-                                  : 'text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-gray-50 dark:hover:bg-slate-700'
-                              }`}
-                            >
-                              {dropdownItem.name}
-                            </Link>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <Link
-                      to={item.path}
-                      onClick={() => setIsOpen(false)}
-                      className={`text-sm font-medium transition-colors duration-200 px-4 py-2 ${
-                        isActive(item.path)
-                          ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20'
-                          : 'text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-gray-50 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      {item.name}
-                    </Link>
-                  )}
-                </div>
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setIsOpen(false)}
+                  className={`text-sm font-medium transition-colors duration-200 px-4 py-2 ${
+                    isActive(item.path)
+                      ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20'
+                      : 'text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-gray-50 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {item.name}
+                </Link>
               ))}
               <div className="px-4 pt-4 border-t border-gray-200 dark:border-slate-700">
                 <Link
@@ -276,13 +192,7 @@ export const Navbar: React.FC = () => {
         )}
       </div>
       
-      {/* Click outside to close dropdown */}
-      {isResourcesOpen && (
-        <div 
-          className="fixed inset-0 z-40" 
-          onClick={() => setIsResourcesOpen(false)}
-        />
-      )}
+
     </nav>
   );
 };
