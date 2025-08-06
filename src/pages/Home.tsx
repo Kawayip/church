@@ -2,7 +2,7 @@ import * as React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Users, Heart, BookOpen, ArrowRight, Play, Clock, MapPin, Phone, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { getChurchIcon, getChurchIconWithFallback, getTeamImage, getBackgroundImage } from '../utils/assets';
+import { getChurchIcon, getTeamImage, getBackgroundImage } from '../utils/assets';
 import { useState, useEffect } from 'react';
 import { eventsAPI, Event } from '../services/api';
 import { format } from 'date-fns';
@@ -18,7 +18,6 @@ export const Home: React.FC = () => {
   
   // Church icon state
   const [churchIconLoaded, setChurchIconLoaded] = useState(false);
-  const [useFallbackIcon, setUseFallbackIcon] = useState(false);
   
   // Background images for carousel
   // Using public folder images for production compatibility
@@ -47,8 +46,6 @@ export const Home: React.FC = () => {
     };
     churchIconImg.onerror = () => {
       console.error('Church icon failed to load:', churchIconUrl);
-      console.log('Using fallback icon');
-      setUseFallbackIcon(true);
     };
     churchIconImg.src = churchIconUrl;
   }, []);
@@ -188,10 +185,9 @@ export const Home: React.FC = () => {
               }}
             >
               <img 
-                src={useFallbackIcon ? getChurchIconWithFallback() : getChurchIcon()} 
+                src={getChurchIcon()} 
                 alt="Church Icon" 
                 className="h-24 w-24 object-contain"
-                onError={() => setUseFallbackIcon(true)}
               />
             </motion.div>
             <motion.h1 
