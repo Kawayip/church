@@ -33,7 +33,7 @@ app.use(helmet({
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://yourdomain.com'] 
-    : ['https://mtolivesda-production.up.railway.app', 'http://localhost:5173', 'http://localhost:5000', 'https:www.mtolivesdachurch.com', 'https:mtolivesdachurch.com'],
+    : ['https://mtolivesda-production.up.railway.app', 'http://localhost:5173', 'http://localhost:5000', 'https://www.mtolivesdachurch.com', 'https://mtolivesdachurch.com'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
