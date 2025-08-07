@@ -501,7 +501,7 @@ router.get('/resources/:id', async (req, res) => {
 
         const file = rows[0];
         res.setHeader('Content-Type', file.mime_type);
-        res.setHeader('Content-Disposition', `inline; filename="${file.file_name}"`);
+        res.setHeader('Content-Disposition', `attachment; filename="${file.file_name}"`);
         res.send(file.file_data);
     } catch (error) {
         console.error('Error retrieving file:', error);
