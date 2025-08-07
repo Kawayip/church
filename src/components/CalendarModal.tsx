@@ -23,7 +23,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
 }) => {
   if (!event) return null;
 
-  const handleCalendarAction = (type: 'google' | 'outlook' | 'apple') => {
+  const handleCalendarAction = (type: 'google' | 'outlook' | 'apple' | 'mobile') => {
     // Create calendar event data
     const startDate = new Date(`${event.event_date}T${event.event_time || '00:00:00'}`);
     const endDate = event.end_time 
@@ -45,6 +45,56 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
     };
 
     switch (type) {
+      case 'mobile':
+        // For mobile devices, try to open the device's default calendar app
+        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+          // Try to detect the platform and use appropriate calendar URL
+          const platform = navigator.platform || navigator.userAgent;
+          
+          if (/iPhone|iPad|iPod/i.test(platform)) {
+            // iOS Calendar - try multiple approaches
+            const iosCalendarUrl = `calshow://?title=${encodeURIComponent(calendarData.text)}&location=${encodeURIComponent(calendarData.location)}&notes=${encodeURIComponent(calendarData.details)}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+            const iosWebUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(calendarData.text)}&dates=${calendarData.dates}&details=${encodeURIComponent(calendarData.details)}&location=${encodeURIComponent(calendarData.location)}&ctz=${encodeURIComponent(calendarData.ctz)}`;
+            
+            // Try to open iOS Calendar app, fallback to Google Calendar web
+            try {
+              window.location.href = iosCalendarUrl;
+              // Fallback after a short delay if the app doesn't open
+              setTimeout(() => {
+                window.open(iosWebUrl, '_blank');
+              }, 1000);
+            } catch (error) {
+              window.open(iosWebUrl, '_blank');
+            }
+          } else if (/Android/i.test(platform)) {
+            // Android Calendar - try multiple approaches
+            const googleCalendarAppUrl = `googlecalendar://event?action=CREATE&title=${encodeURIComponent(calendarData.text)}&location=${encodeURIComponent(calendarData.location)}&description=${encodeURIComponent(calendarData.details)}&startTime=${startDate.getTime()}&endTime=${endDate.getTime()}`;
+            const googleCalendarWebUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(calendarData.text)}&dates=${calendarData.dates}&details=${encodeURIComponent(calendarData.details)}&location=${encodeURIComponent(calendarData.location)}&ctz=${encodeURIComponent(calendarData.ctz)}`;
+            
+            // Try to open Google Calendar app first, fallback to web
+            try {
+              window.location.href = googleCalendarAppUrl;
+              // Fallback after a short delay if the app doesn't open
+              setTimeout(() => {
+                window.open(googleCalendarWebUrl, '_blank');
+              }, 1000);
+            } catch (error) {
+              window.open(googleCalendarWebUrl, '_blank');
+            }
+          } else {
+            // Fallback for other mobile devices
+            const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(calendarData.text)}&dates=${calendarData.dates}&details=${encodeURIComponent(calendarData.details)}&location=${encodeURIComponent(calendarData.location)}&ctz=${encodeURIComponent(calendarData.ctz)}`;
+            window.open(googleCalendarUrl, '_blank');
+          }
+        } else {
+          // Desktop fallback
+          const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(calendarData.text)}&dates=${calendarData.dates}&details=${encodeURIComponent(calendarData.details)}&location=${encodeURIComponent(calendarData.location)}&ctz=${encodeURIComponent(calendarData.ctz)}`;
+          window.open(googleCalendarUrl, '_blank');
+        }
+        break;
+        
       case 'google':
         const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(calendarData.text)}&dates=${calendarData.dates}&details=${encodeURIComponent(calendarData.details)}&location=${encodeURIComponent(calendarData.location)}&ctz=${encodeURIComponent(calendarData.ctz)}`;
         window.open(googleCalendarUrl, '_blank');
@@ -123,58 +173,75 @@ END:VCALENDAR`;
                 </p>
               </div>
 
-              <div className="space-y-3">
-                {/* Google Calendar */}
-                <button
-                  onClick={() => handleCalendarAction('google')}
-                  className="w-full flex items-center justify-between p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-                >
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center mr-3">
-                      <Calendar className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="text-left">
-                      <div className="font-medium text-gray-900 dark:text-white">Google Calendar</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">Open in browser</div>
-                    </div>
-                  </div>
-                  <ExternalLink className="h-4 w-4 text-gray-400" />
-                </button>
+                             <div className="space-y-3">
+                 {/* Mobile Calendar (Primary option for mobile devices) */}
+                 <button
+                   onClick={() => handleCalendarAction('mobile')}
+                   className="w-full flex items-center justify-between p-4 border border-emerald-200 dark:border-emerald-700 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors bg-emerald-50 dark:bg-emerald-900/10"
+                 >
+                   <div className="flex items-center">
+                     <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center mr-3">
+                       <Calendar className="h-5 w-5 text-white" />
+                     </div>
+                     <div className="text-left">
+                       <div className="font-medium text-gray-900 dark:text-white">Add to Phone Calendar</div>
+                       <div className="text-sm text-gray-600 dark:text-gray-400">Open in device calendar app</div>
+                     </div>
+                   </div>
+                   <ExternalLink className="h-4 w-4 text-emerald-500" />
+                 </button>
 
-                {/* Outlook Calendar */}
-                <button
-                  onClick={() => handleCalendarAction('outlook')}
-                  className="w-full flex items-center justify-between p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-                >
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
-                      <Calendar className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="text-left">
-                      <div className="font-medium text-gray-900 dark:text-white">Outlook Calendar</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">Open in browser</div>
-                    </div>
-                  </div>
-                  <ExternalLink className="h-4 w-4 text-gray-400" />
-                </button>
+                 {/* Google Calendar */}
+                 <button
+                   onClick={() => handleCalendarAction('google')}
+                   className="w-full flex items-center justify-between p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                 >
+                   <div className="flex items-center">
+                     <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center mr-3">
+                       <Calendar className="h-5 w-5 text-white" />
+                     </div>
+                     <div className="text-left">
+                       <div className="font-medium text-gray-900 dark:text-white">Google Calendar</div>
+                       <div className="text-sm text-gray-600 dark:text-gray-400">Open in browser</div>
+                     </div>
+                   </div>
+                   <ExternalLink className="h-4 w-4 text-gray-400" />
+                 </button>
 
-                {/* Apple Calendar */}
-                <button
-                  onClick={() => handleCalendarAction('apple')}
-                  className="w-full flex items-center justify-between p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-                >
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-gray-800 dark:bg-gray-600 rounded-lg flex items-center justify-center mr-3">
-                      <Calendar className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="text-left">
-                      <div className="font-medium text-gray-900 dark:text-white">Apple Calendar</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">Download .ics file</div>
-                    </div>
-                  </div>
-                  <Download className="h-4 w-4 text-gray-400" />
-                </button>
-              </div>
+                 {/* Outlook Calendar */}
+                 <button
+                   onClick={() => handleCalendarAction('outlook')}
+                   className="w-full flex items-center justify-between p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                 >
+                   <div className="flex items-center">
+                     <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
+                       <Calendar className="h-5 w-5 text-white" />
+                     </div>
+                     <div className="text-left">
+                       <div className="font-medium text-gray-900 dark:text-white">Outlook Calendar</div>
+                       <div className="text-sm text-gray-600 dark:text-gray-400">Open in browser</div>
+                     </div>
+                   </div>
+                   <ExternalLink className="h-4 w-4 text-gray-400" />
+                 </button>
+
+                 {/* Apple Calendar */}
+                 <button
+                   onClick={() => handleCalendarAction('apple')}
+                   className="w-full flex items-center justify-between p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                 >
+                   <div className="flex items-center">
+                     <div className="w-10 h-10 bg-gray-800 dark:bg-gray-600 rounded-lg flex items-center justify-center mr-3">
+                       <Calendar className="h-5 w-5 text-white" />
+                     </div>
+                     <div className="text-left">
+                       <div className="font-medium text-gray-900 dark:text-white">Apple Calendar</div>
+                       <div className="text-sm text-gray-600 dark:text-gray-400">Download .ics file</div>
+                     </div>
+                   </div>
+                   <Download className="h-4 w-4 text-gray-400" />
+                 </button>
+               </div>
             </div>
           </motion.div>
         </motion.div>

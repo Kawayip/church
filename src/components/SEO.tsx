@@ -1,5 +1,6 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
+import { getOptimizedImageUrl, getDefaultLogoUrl } from '../utils/imageUtils';
 
 export interface SEOProps {
   title?: string;
@@ -42,8 +43,10 @@ export const SEO: React.FC<SEOProps> = ({
 }) => {
   // Get current URL if not provided
   const currentUrl = url || window.location.href;
-  const fullImageUrl = image.startsWith('http') ? image : `${window.location.origin}${image}`;
   const fullCanonicalUrl = canonicalUrl || currentUrl;
+  
+  // Ensure image URL is absolute and optimized for social media
+  const socialImageUrl = image ? getOptimizedImageUrl(image) : getDefaultLogoUrl();
 
   return (
     <Helmet>
@@ -60,14 +63,18 @@ export const SEO: React.FC<SEOProps> = ({
       {noFollow && <meta name="robots" content="nofollow" />}
       {noIndex && noFollow && <meta name="robots" content="noindex, nofollow" />}
       
-      {/* Open Graph Meta Tags (Facebook, LinkedIn, etc.) */}
+      {/* Open Graph Meta Tags (Facebook, LinkedIn, WhatsApp, etc.) */}
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
-      <meta property="og:image" content={fullImageUrl} />
+      <meta property="og:image" content={socialImageUrl} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:image:alt" content={title} />
       <meta property="og:url" content={currentUrl} />
       <meta property="og:type" content={type} />
       <meta property="og:site_name" content={siteName} />
       <meta property="og:locale" content="en_US" />
+      <meta property="og:updated_time" content={modifiedTime || new Date().toISOString()} />
       
       {/* Open Graph Article Tags */}
       {type === 'article' && publishedTime && (
@@ -92,7 +99,8 @@ export const SEO: React.FC<SEOProps> = ({
       <meta name="twitter:card" content={twitterCard} />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={fullImageUrl} />
+      <meta name="twitter:image" content={socialImageUrl} />
+      <meta name="twitter:image:alt" content={title} />
       <meta name="twitter:creator" content={twitterCreator} />
       <meta name="twitter:site" content={twitterSite} />
       
@@ -100,6 +108,18 @@ export const SEO: React.FC<SEOProps> = ({
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta name="theme-color" content="#3f7f8c" />
       <meta name="msapplication-TileColor" content="#3f7f8c" />
+      
+      {/* WhatsApp and messaging platform specific meta tags */}
+      <meta name="format-detection" content="telephone=no" />
+      <meta name="apple-mobile-web-app-capable" content="yes" />
+      <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+      <meta name="apple-mobile-web-app-title" content={siteName} />
+      
+      {/* Additional Open Graph tags for better social media sharing */}
+      <meta property="og:image:secure_url" content={socialImageUrl.replace(/^http:/, 'https:')} />
+      <meta property="og:image:type" content="image/jpeg" />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
       
       {/* Structured Data for Events */}
       {type === 'event' && (
@@ -109,13 +129,15 @@ export const SEO: React.FC<SEOProps> = ({
             "@type": "Event",
             "name": title,
             "description": description,
-            "image": fullImageUrl,
+            "image": socialImageUrl,
             "url": currentUrl,
             "organizer": {
               "@type": "Organization",
               "name": "Mt. Olives SDA Church",
               "url": "https://mtolivessda.org"
-            }
+            },
+            "startDate": publishedTime,
+            "endDate": modifiedTime
           })}
         </script>
       )}
@@ -128,6 +150,7 @@ export const SEO: React.FC<SEOProps> = ({
           "name": "Mt. Olives SDA Church",
           "url": "https://mtolivessda.org",
           "logo": `${window.location.origin}/images/logos/church-logo.png`,
+          "image": socialImageUrl,
           "description": "A vibrant Seventh-day Adventist community in Naalya, dedicated to worship, fellowship, and service.",
           "address": {
             "@type": "PostalAddress",
