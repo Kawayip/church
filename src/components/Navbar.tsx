@@ -73,12 +73,13 @@ export const Navbar: React.FC = () => {
                 <Play className="h-4 w-4" />
                 <span>Live</span>
               </Link>
-              <Link
+              {/* Member Portal - Hidden for now, accessible via direct URL */}
+              {/* <Link
                 to="/login"
                 className="btn-primary text-sm px-4 py-2"
               >
                 Member Portal
-              </Link>
+              </Link> */}
             </div>
           </div>
 
@@ -117,12 +118,13 @@ export const Navbar: React.FC = () => {
                 <Play className="h-4 w-4" />
                 <span>Live</span>
               </Link>
-              <Link
+              {/* Member Portal - Hidden for now, accessible via direct URL */}
+              {/* <Link
                 to="/login"
                 className="btn-primary text-sm px-3 py-2"
               >
                 Portal
-              </Link>
+              </Link> */}
             </div>
           </div>
 
@@ -179,13 +181,14 @@ export const Navbar: React.FC = () => {
                   <Play className="h-4 w-4" />
                   <span>Watch Live</span>
                 </Link>
-                <Link
+                {/* Member Portal - Hidden for now, accessible via direct URL */}
+                {/* <Link
                   to="/login"
                   onClick={() => setIsOpen(false)}
                   className="btn-primary w-full text-center block"
                 >
                   Member Portal
-                </Link>
+                </Link> */}
               </div>
             </div>
           </motion.div>
