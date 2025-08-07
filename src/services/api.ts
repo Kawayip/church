@@ -679,6 +679,24 @@ export const galleryAPI = {
     });
   },
 
+  updateCollection: async (id: number, data: UpdateGalleryImageRequest): Promise<ApiResponse> => {
+    return apiRequest(`/files/gallery/collections/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+
+  updateImage: async (id: number, data: {
+    title?: string;
+    description?: string;
+    sort_order?: number;
+  }): Promise<ApiResponse> => {
+    return apiRequest(`/files/gallery/images/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+
   delete: async (id: number): Promise<ApiResponse> => {
     return apiRequest(`/files/gallery/${id}`, {
       method: 'DELETE'

@@ -18,6 +18,9 @@ export const AdminGallery: React.FC = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCollectionUploadModalOpen, setIsCollectionUploadModalOpen] = useState(false);
   const [isCollectionViewModalOpen, setIsCollectionViewModalOpen] = useState(false);
+  const [isCollectionEditModalOpen, setIsCollectionEditModalOpen] = useState(false);
+  const [editingImage, setEditingImage] = useState<GalleryImage | null>(null);
+  const [isImageEditModalOpen, setIsImageEditModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -208,16 +211,22 @@ export const AdminGallery: React.FC = () => {
   };
 
   const handleEdit = (item: GalleryItem) => {
-    setSelectedItem(item);
-    setFormData({
-      title: item.title,
-      description: item.description || '',
-      category: item.category,
-      imageData: '',
-      imageType: '',
-      imageName: ''
-    });
-    setIsModalOpen(true);
+    if (item.type === 'collection') {
+      // For collections, we need to fetch the full collection data first
+      handleViewCollection(item.id);
+    } else {
+      // For single images
+      setSelectedItem(item);
+      setFormData({
+        title: item.title,
+        description: item.description || '',
+        category: item.category,
+        imageData: '',
+        imageType: '',
+        imageName: ''
+      });
+      setIsModalOpen(true);
+    }
   };
 
   const handleViewCollection = async (id: number) => {
@@ -231,6 +240,19 @@ export const AdminGallery: React.FC = () => {
       }
     } catch (err) {
       setError('Failed to fetch collection');
+    }
+  };
+
+  const handleEditCollection = () => {
+    if (selectedCollection) {
+      setCollectionFormData({
+        title: selectedCollection.title,
+        description: selectedCollection.description || '',
+        category: selectedCollection.category,
+        images: []
+      });
+      setIsCollectionViewModalOpen(false);
+      setIsCollectionEditModalOpen(true);
     }
   };
 
@@ -265,6 +287,78 @@ export const AdminGallery: React.FC = () => {
       }
     } catch (err) {
       setError('Failed to update item');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleUpdateCollection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCollection) return;
+
+    setUploading(true);
+    setError(null);
+
+    try {
+      const response = await galleryAPI.updateCollection(selectedCollection.id, {
+        title: collectionFormData.title,
+        description: collectionFormData.description,
+        category: collectionFormData.category
+      });
+      
+      if (response.success) {
+        setIsCollectionEditModalOpen(false);
+        setSelectedCollection(null);
+        setCollectionFormData({
+          title: '',
+          description: '',
+          category: 'general',
+          images: []
+        });
+        fetchItems();
+      } else {
+        setError(response.message || 'Failed to update collection');
+      }
+    } catch (err) {
+      setError('Failed to update collection');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleEditImage = (image: GalleryImage) => {
+    setEditingImage(image);
+    setIsImageEditModalOpen(true);
+  };
+
+  const handleUpdateImage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingImage) return;
+
+    setUploading(true);
+    setError(null);
+
+    try {
+      const response = await galleryAPI.updateImage(editingImage.id, {
+        title: editingImage.title,
+        description: editingImage.description
+      });
+      
+      if (response.success) {
+        setIsImageEditModalOpen(false);
+        setEditingImage(null);
+        // Refresh the collection view
+        if (selectedCollection) {
+          const collectionResponse = await galleryAPI.getCollection(selectedCollection.id);
+          if (collectionResponse.success && collectionResponse.data) {
+            setSelectedCollection(collectionResponse.data);
+          }
+        }
+      } else {
+        setError(response.message || 'Failed to update image');
+      }
+    } catch (err) {
+      setError('Failed to update image');
     } finally {
       setUploading(false);
     }
@@ -485,9 +579,9 @@ export const AdminGallery: React.FC = () => {
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {selectedImage ? 'Edit Image' : 'Upload New Image'}
-                </h3>
+                                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                   {selectedItem ? 'Edit Image' : 'Upload New Image'}
+                 </h3>
                 <button
                   onClick={() => setIsModalOpen(false)}
                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
@@ -496,7 +590,7 @@ export const AdminGallery: React.FC = () => {
                 </button>
               </div>
 
-              <form onSubmit={selectedImage ? handleUpdate : handleSubmit} className="space-y-4">
+                             <form onSubmit={selectedItem ? handleUpdate : handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Title *
@@ -542,7 +636,7 @@ export const AdminGallery: React.FC = () => {
                   </select>
                 </div>
 
-                {!selectedImage && (
+                                 {!selectedItem && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Image File *
@@ -590,9 +684,9 @@ export const AdminGallery: React.FC = () => {
                   >
                     {uploading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      selectedImage ? 'Update Image' : 'Upload Image'
-                    )}
+                                         ) : (
+                       selectedItem ? 'Update Image' : 'Upload Image'
+                     )}
                   </button>
                 </div>
               </form>
@@ -875,6 +969,14 @@ export const AdminGallery: React.FC = () => {
                         alt={image.title || `Image ${index + 1}`}
                         className="w-full aspect-square object-cover rounded-lg"
                       />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <button
+                          onClick={() => handleEditImage(image)}
+                          className="bg-emerald-500 text-white px-3 py-1 rounded text-sm hover:bg-emerald-600 transition-colors"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                      </div>
                       {image.title && (
                         <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white p-2 rounded-b-lg text-xs">
                           {image.title}
@@ -884,23 +986,237 @@ export const AdminGallery: React.FC = () => {
                   ))}
                 </div>
 
-                <div className="flex space-x-3 pt-4">
-                  <button
-                    onClick={() => {
-                      setIsCollectionViewModalOpen(false);
-                      setSelectedCollection(null);
-                      handleDelete(selectedCollection.id);
-                    }}
-                    className="flex-1 bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors"
-                  >
-                    Delete Collection
-                  </button>
-                </div>
+                                 <div className="flex space-x-3 pt-4">
+                   <button
+                     onClick={handleEditCollection}
+                     className="flex-1 btn-primary"
+                   >
+                     Edit Collection
+                   </button>
+                   <button
+                     onClick={() => {
+                       setIsCollectionViewModalOpen(false);
+                       setSelectedCollection(null);
+                       handleDelete(selectedCollection.id);
+                     }}
+                     className="flex-1 bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors"
+                   >
+                     Delete Collection
+                   </button>
+                 </div>
               </div>
             </div>
           </motion.div>
-        </div>
-      )}
-    </div>
-  );
-}; 
+                 </div>
+       )}
+
+       {/* Collection Edit Modal */}
+       {isCollectionEditModalOpen && selectedCollection && (
+         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+           <motion.div
+             initial={{ opacity: 0, scale: 0.95 }}
+             animate={{ opacity: 1, scale: 1 }}
+             className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+           >
+             <div className="p-6">
+               <div className="flex items-center justify-between mb-6">
+                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                   Edit Collection
+                 </h3>
+                 <button
+                   onClick={() => {
+                     setIsCollectionEditModalOpen(false);
+                     setSelectedCollection(null);
+                   }}
+                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                 >
+                   <X className="h-6 w-6" />
+                 </button>
+               </div>
+
+               <form onSubmit={handleUpdateCollection} className="space-y-4">
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                     Collection Title *
+                   </label>
+                   <input
+                     type="text"
+                     required
+                     value={collectionFormData.title}
+                     onChange={(e) => setCollectionFormData(prev => ({ ...prev, title: e.target.value }))}
+                     className="form-input w-full"
+                     placeholder="e.g., Saturday Service Photos"
+                   />
+                 </div>
+
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                     Description
+                   </label>
+                   <textarea
+                     value={collectionFormData.description}
+                     onChange={(e) => setCollectionFormData(prev => ({ ...prev, description: e.target.value }))}
+                     className="form-textarea w-full"
+                     rows={3}
+                     placeholder="Describe this collection of images"
+                   />
+                 </div>
+
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                     Category *
+                   </label>
+                   <select
+                     required
+                     value={collectionFormData.category}
+                     onChange={(e) => setCollectionFormData(prev => ({ ...prev, category: e.target.value as any }))}
+                     className="form-select w-full"
+                   >
+                     {categories.filter(cat => cat.id !== 'all').map(category => (
+                       <option key={category.id} value={category.id}>
+                         {category.name}
+                       </option>
+                     ))}
+                   </select>
+                 </div>
+
+                 <div className="bg-gray-50 dark:bg-slate-700 p-4 rounded-lg">
+                   <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                     Collection Images ({selectedCollection.images.length})
+                   </h4>
+                   <p className="text-xs text-gray-500 dark:text-gray-500">
+                     Images cannot be modified in this view. To change images, delete and recreate the collection.
+                   </p>
+                 </div>
+
+                 {error && (
+                   <div className="text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-md">
+                     {error}
+                   </div>
+                 )}
+
+                 <div className="flex space-x-3 pt-4">
+                   <button
+                     type="button"
+                     onClick={() => {
+                       setIsCollectionEditModalOpen(false);
+                       setSelectedCollection(null);
+                     }}
+                     className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                   >
+                     Cancel
+                   </button>
+                   <button
+                     type="submit"
+                     disabled={uploading}
+                     className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                   >
+                     {uploading ? (
+                       <Loader2 className="h-4 w-4 animate-spin" />
+                     ) : (
+                       'Update Collection'
+                     )}
+                   </button>
+                 </div>
+               </form>
+             </div>
+           </motion.div>
+         </div>
+       )}
+
+       {/* Image Edit Modal */}
+       {isImageEditModalOpen && editingImage && (
+         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+           <motion.div
+             initial={{ opacity: 0, scale: 0.95 }}
+             animate={{ opacity: 1, scale: 1 }}
+             className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+           >
+             <div className="p-6">
+               <div className="flex items-center justify-between mb-6">
+                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                   Edit Image
+                 </h3>
+                 <button
+                   onClick={() => {
+                     setIsImageEditModalOpen(false);
+                     setEditingImage(null);
+                   }}
+                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                 >
+                   <X className="h-6 w-6" />
+                 </button>
+               </div>
+
+               <div className="mb-4">
+                 <img
+                   src={galleryAPI.getImage(editingImage.id)}
+                   alt={editingImage.title || 'Image'}
+                   className="w-full rounded-lg"
+                 />
+               </div>
+
+               <form onSubmit={handleUpdateImage} className="space-y-4">
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                     Image Title
+                   </label>
+                   <input
+                     type="text"
+                     value={editingImage.title || ''}
+                     onChange={(e) => setEditingImage(prev => prev ? { ...prev, title: e.target.value } : null)}
+                     className="form-input w-full"
+                     placeholder="Enter image title"
+                   />
+                 </div>
+
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                     Description
+                   </label>
+                   <textarea
+                     value={editingImage.description || ''}
+                     onChange={(e) => setEditingImage(prev => prev ? { ...prev, description: e.target.value } : null)}
+                     className="form-textarea w-full"
+                     rows={3}
+                     placeholder="Enter image description"
+                   />
+                 </div>
+
+                 {error && (
+                   <div className="text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-md">
+                     {error}
+                   </div>
+                 )}
+
+                 <div className="flex space-x-3 pt-4">
+                   <button
+                     type="button"
+                     onClick={() => {
+                       setIsImageEditModalOpen(false);
+                       setEditingImage(null);
+                     }}
+                     className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                   >
+                     Cancel
+                   </button>
+                   <button
+                     type="submit"
+                     disabled={uploading}
+                     className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                   >
+                     {uploading ? (
+                       <Loader2 className="h-4 w-4 animate-spin" />
+                     ) : (
+                       'Update Image'
+                     )}
+                   </button>
+                 </div>
+               </form>
+             </div>
+           </motion.div>
+         </div>
+       )}
+     </div>
+   );
+ }; 

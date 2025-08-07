@@ -365,6 +365,90 @@ router.put('/gallery/:id', authenticateToken, requireAdmin, [
     }
 });
 
+// Update gallery collection
+router.put('/gallery/collections/:id', authenticateToken, requireAdmin, [
+    body('title').notEmpty().withMessage('Title is required'),
+    body('description').optional(),
+    body('category').isIn(['events', 'services', 'outreach', 'youth', 'general']).withMessage('Invalid category')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ success: false, errors: errors.array() });
+        }
+        
+        const { id } = req.params;
+        const { title, description, category } = req.body;
+        
+        const [result] = await pool.execute(
+            'UPDATE gallery_collections SET title = ?, description = ?, category = ? WHERE id = ?',
+            [title, description, category, id]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: 'Collection not found' });
+        }
+        
+        res.json({ success: true, message: 'Collection updated successfully' });
+    } catch (error) {
+        console.error('Error updating collection:', error);
+        res.status(500).json({ success: false, message: 'Error updating collection' });
+    }
+});
+
+// Update individual image in collection
+router.put('/gallery/images/:id', authenticateToken, requireAdmin, [
+    body('title').optional(),
+    body('description').optional(),
+    body('sort_order').optional().isInt({ min: 0 })
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ success: false, errors: errors.array() });
+        }
+        
+        const { id } = req.params;
+        const { title, description, sort_order } = req.body;
+        
+        const updateFields = [];
+        const updateValues = [];
+        
+        if (title !== undefined) {
+            updateFields.push('title = ?');
+            updateValues.push(title);
+        }
+        if (description !== undefined) {
+            updateFields.push('description = ?');
+            updateValues.push(description);
+        }
+        if (sort_order !== undefined) {
+            updateFields.push('sort_order = ?');
+            updateValues.push(sort_order);
+        }
+        
+        if (updateFields.length === 0) {
+            return res.status(400).json({ success: false, message: 'No fields to update' });
+        }
+        
+        updateValues.push(id);
+        
+        const [result] = await pool.execute(
+            `UPDATE gallery_images SET ${updateFields.join(', ')} WHERE id = ?`,
+            updateValues
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: 'Image not found' });
+        }
+        
+        res.json({ success: true, message: 'Image updated successfully' });
+    } catch (error) {
+        console.error('Error updating image:', error);
+        res.status(500).json({ success: false, message: 'Error updating image' });
+    }
+});
+
 // Upload resource file
 router.post('/resources', authenticateToken, requireAdmin, [
     body('title').notEmpty().withMessage('Title is required'),
