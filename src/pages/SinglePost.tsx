@@ -13,6 +13,8 @@ import {
   FileText
 } from 'lucide-react';
 import { postsAPI, type Post } from '../services/api';
+import { SEO } from '../components/SEO';
+import { extractPlainTextForSharing, createSocialDescription } from '../utils/textUtils';
 
 export const SinglePost: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -78,9 +80,15 @@ export const SinglePost: React.FC = () => {
 
   const handleShare = () => {
     if (navigator.share) {
+      const cleanText = post?.excerpt 
+        ? extractPlainTextForSharing(post.excerpt, 200)
+        : post?.content 
+        ? extractPlainTextForSharing(post.content, 200)
+        : '';
+      
       navigator.share({
         title: post?.title || '',
-        text: post?.excerpt || '',
+        text: cleanText,
         url: window.location.href
       });
     } else {
@@ -122,6 +130,19 @@ export const SinglePost: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
+      <SEO
+        title={`${post.title} - Mt. Olives SDA Church`}
+        description={post.excerpt ? createSocialDescription(post.excerpt, `Read ${post.title} on Mt. Olives SDA Church blog.`, 160) : post.content ? createSocialDescription(post.content, `Read ${post.title} on Mt. Olives SDA Church blog.`, 160) : `Read ${post.title} on Mt. Olives SDA Church blog.`}
+        image={post.featured_image_name ? postsAPI.getImageUrl(post.id) : '/images/logos/church-logo.png'}
+        url={window.location.href}
+        type="article"
+        publishedTime={post.published_at || post.created_at}
+        modifiedTime={post.updated_at}
+        author={getAuthorName(post)}
+        section={post.category}
+        tags={post.tags}
+        twitterCard="summary_large_image"
+      />
       {/* Header */}
       <div className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
         <div className="max-w-4xl mx-auto px-4 py-6">

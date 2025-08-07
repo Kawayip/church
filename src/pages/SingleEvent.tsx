@@ -8,6 +8,8 @@ import {
 import { format } from 'date-fns';
 import { eventsAPI, Event } from '../services/api';
 import { SEO } from '../components/SEO';
+import { CalendarModal } from '../components/CalendarModal';
+import { extractPlainTextForSharing, createSocialDescription } from '../utils/textUtils';
 
 export const SingleEvent: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,6 +18,7 @@ export const SingleEvent: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [relatedEvents, setRelatedEvents] = useState<Event[]>([]);
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -92,9 +95,13 @@ export const SingleEvent: React.FC = () => {
 
   const handleShare = () => {
     if (navigator.share) {
+      const cleanDescription = event?.description 
+        ? extractPlainTextForSharing(event.description, 200)
+        : '';
+      
       navigator.share({
         title: event?.title,
-        text: event?.description,
+        text: cleanDescription,
         url: window.location.href,
       });
     } else {
@@ -102,6 +109,10 @@ export const SingleEvent: React.FC = () => {
       navigator.clipboard.writeText(window.location.href);
       alert('Link copied to clipboard!');
     }
+  };
+
+  const handleAddToCalendar = () => {
+    setIsCalendarModalOpen(true);
   };
 
   if (loading) {
@@ -140,17 +151,19 @@ export const SingleEvent: React.FC = () => {
 
   return (
     <div className="pt-16 min-h-screen bg-gray-50 dark:bg-slate-900">
-      {event && (
-        <SEO
-          title={`${event.title} - Mt. Olives SDA Church`}
-          description={event.description || `Join us for ${event.title} at Mt. Olives SDA Church. ${event.event_date ? `Date: ${format(new Date(event.event_date), 'MMMM d, yyyy')}` : ''}`}
-          image={event.image_url || eventsAPI.getImageUrl(event.id)}
-          type="event"
-          publishedTime={event.created_at}
-          modifiedTime={event.updated_at}
-          tags={[event.event_type, 'church event', 'Mt. Olives SDA']}
-        />
-      )}
+             {event && (
+         <SEO
+           title={`${event.title} - Mt. Olives SDA Church`}
+                       description={event.description ? createSocialDescription(event.description, `Join us for ${event.title} at Mt. Olives SDA Church. ${event.event_date ? `Date: ${format(new Date(event.event_date), 'MMMM d, yyyy')}` : ''}`, 160) : `Join us for ${event.title} at Mt. Olives SDA Church. ${event.event_date ? `Date: ${format(new Date(event.event_date), 'MMMM d, yyyy')}` : ''}`}
+           image={event.image_url || eventsAPI.getImageUrl(event.id)}
+           url={window.location.href}
+           type="event"
+           publishedTime={event.created_at}
+           modifiedTime={event.updated_at}
+           tags={[event.event_type, 'church event', 'Mt. Olives SDA']}
+           twitterCard="summary_large_image"
+         />
+       )}
       {/* Hero Section */}
       <section className="relative">
         {/* Event Image */}
@@ -221,7 +234,7 @@ export const SingleEvent: React.FC = () => {
                   </h1>
                   {event.description && (
                     <div 
-                      className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed prose prose-lg max-w-none"
+                      className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed prose prose-lg max-w-none prose-headings:text-gray-900 prose-headings:dark:text-white prose-p:text-gray-600 prose-p:dark:text-gray-300 prose-strong:text-gray-900 prose-strong:dark:text-white prose-strong:font-semibold prose-em:text-gray-700 prose-em:dark:text-gray-200 prose-ul:list-disc prose-ul:pl-6 prose-ol:list-decimal prose-ol:pl-6 prose-li:text-gray-600 prose-li:dark:text-gray-300 prose-li:my-1"
                       dangerouslySetInnerHTML={{ __html: event.description }}
                     />
                   )}
@@ -312,7 +325,10 @@ export const SingleEvent: React.FC = () => {
                 <div className="card p-6">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
                   <div className="space-y-3">
-                    <button className="w-full btn-primary">
+                    <button 
+                      onClick={handleAddToCalendar}
+                      className="w-full btn-primary"
+                    >
                       <Calendar className="h-4 w-4 mr-2" />
                       Add to Calendar
                     </button>
@@ -368,6 +384,13 @@ export const SingleEvent: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Calendar Modal */}
+      <CalendarModal
+        isOpen={isCalendarModalOpen}
+        onClose={() => setIsCalendarModalOpen(false)}
+        event={event}
+      />
     </div>
   );
 }; 

@@ -6,6 +6,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
+import { ScrollToTop } from './components/ScrollToTop';
 import { Home } from './pages/Home';
 import { About } from './pages/About';
 import { Ministries } from './pages/Ministries';
@@ -57,9 +58,10 @@ function App() {
     <HelmetProvider>
       <ThemeProvider>
         <AuthProvider>
-          <Router>
-            <AppLayout>
-              <Routes>
+                  <Router>
+          <ScrollToTop />
+          <AppLayout>
+            <Routes>
               {/* Public Pages */}
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />

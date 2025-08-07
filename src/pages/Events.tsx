@@ -157,7 +157,7 @@ export const Events: React.FC = () => {
                       </h3>
                       {event.description && (
                         <div 
-                          className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-2 prose prose-sm max-w-none"
+                          className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-2 prose prose-sm max-w-none prose-headings:text-gray-900 prose-headings:dark:text-white prose-p:text-gray-600 prose-p:dark:text-gray-300 prose-strong:text-gray-900 prose-strong:dark:text-white prose-strong:font-semibold prose-em:text-gray-700 prose-em:dark:text-gray-200 prose-ul:list-disc prose-ul:pl-4 prose-ol:list-decimal prose-ol:pl-4 prose-li:text-gray-600 prose-li:dark:text-gray-300 prose-li:my-0.5"
                           dangerouslySetInnerHTML={{ __html: event.description }}
                         />
                       )}
