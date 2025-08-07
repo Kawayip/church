@@ -656,7 +656,7 @@ export const AdminGallery: React.FC = () => {
                           {selectedFile ? selectedFile.name : 'Click to select an image file'}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                          PNG, JPG, GIF up to 10MB
+                          PNG, JPG, GIF up to 25MB
                         </p>
                       </label>
                     </div>
@@ -861,7 +861,7 @@ export const AdminGallery: React.FC = () => {
                         }
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                        PNG, JPG, GIF up to 10MB each
+                        PNG, JPG, GIF up to 25MB each
                       </p>
                     </label>
                   </div>

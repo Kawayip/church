@@ -109,9 +109,9 @@ export const PostModal: React.FC<PostModalProps> = ({ isOpen, onClose, post, onS
         return;
       }
 
-      // Validate file size (5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Image file size must be less than 5MB');
+      // Validate file size (25MB)
+      if (file.size > 25 * 1024 * 1024) {
+        setError('Image file size must be less than 25MB');
         return;
       }
 
@@ -151,9 +151,9 @@ export const PostModal: React.FC<PostModalProps> = ({ isOpen, onClose, post, onS
         return;
       }
 
-      // Validate file size (5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Image file size must be less than 5MB');
+      // Validate file size (25MB)
+      if (file.size > 25 * 1024 * 1024) {
+        setError('Image file size must be less than 25MB');
         return;
       }
 
@@ -399,7 +399,7 @@ export const PostModal: React.FC<PostModalProps> = ({ isOpen, onClose, post, onS
                       <span className="font-semibold">Click to upload</span> or drag and drop
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      PNG, JPG, GIF up to 5MB
+                      PNG, JPG, GIF up to 25MB
                     </p>
                     <input
                       type="file"
