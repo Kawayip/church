@@ -16,25 +16,25 @@ export const Contact: React.FC = () => {
     {
       icon: MapPin,
       title: 'Our Location',
-      details: ['Naalya, Kampala', 'Uganda'],
+      details: ['Opolot Close, Ndagire Rd, Wakiso', 'Uganda'],
       color: 'text-emerald-400'
     },
     {
       icon: Phone,
       title: 'Phone Numbers',
-      details: ['+256 700 123 456', '+256 752 987 654'],
+      details: ['+256 772 420868', '+256 753 420868'],
       color: 'text-blue-400'
     },
     {
       icon: Mail,
       title: 'Email Address',
-      details: ['info@mtolivessda.org', 'pastor@mtolivessda.org'],
+      details: ['info@mtolivesdachurch.com'],
       color: 'text-purple-400'
     },
     {
       icon: Clock,
       title: 'Service Times',
-      details: ['Sabbath: 9:00 AM', 'Prayer Meeting: Fri 7:00 PM'],
+      details: ['Sabbath: 9:00 AM', 'Worship Vespers: Fri 7:00 PM'],
       color: 'text-amber-400'
     }
   ];

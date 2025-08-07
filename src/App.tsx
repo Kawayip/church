@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -53,11 +54,12 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <Router>
-          <AppLayout>
-            <Routes>
+    <HelmetProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <Router>
+            <AppLayout>
+              <Routes>
               {/* Public Pages */}
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
@@ -95,6 +97,7 @@ function App() {
         </Router>
       </AuthProvider>
     </ThemeProvider>
+    </HelmetProvider>
   );
 }
 

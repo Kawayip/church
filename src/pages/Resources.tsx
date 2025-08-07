@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Download, Search, Filter, BookOpen, Music, Video, Calendar, Loader2, AlertCircle } from 'lucide-react';
 import { resourcesAPI, filesAPI, type Resource } from '../services/api';
+import { SEO, SEOConfigs } from '../components/SEO';
+import { trackDownloadClick } from '../services/downloadTracking';
 
 export const Resources: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,11 +60,12 @@ export const Resources: React.FC = () => {
     try {
       setDownloading(resource.id);
       
-      // Track download
-      await resourcesAPI.download(resource.id);
-      
-      // Get the file URL and trigger download
+      // Track download with our service
       const fileUrl = filesAPI.getResource(resource.id);
+      await trackDownloadClick(fileUrl, resource.fileName);
+      
+      // Track download with API
+      await resourcesAPI.download(resource.id);
       
       // Create a temporary link and trigger download
       const link = document.createElement('a');
@@ -129,6 +132,7 @@ export const Resources: React.FC = () => {
 
   return (
     <div className="pt-16">
+      <SEO {...SEOConfigs.resources} />
       {/* Hero Section */}
       <section className="py-20 section-light">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

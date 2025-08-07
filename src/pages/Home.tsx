@@ -6,6 +6,7 @@ import { getChurchIcon, getTeamImage, getBackgroundImage } from '../utils/assets
 import { useState, useEffect } from 'react';
 import { eventsAPI, Event } from '../services/api';
 import { format } from 'date-fns';
+import { SEO, SEOConfigs } from '../components/SEO';
 
 export const Home: React.FC = () => {
   // Background carousel state
@@ -138,6 +139,7 @@ export const Home: React.FC = () => {
 
   return (
     <div className="pt-16">
+      <SEO {...SEOConfigs.home} />
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center section-light overflow-hidden mb-8 md:mb-12">
         {/* Background Image Carousel */}

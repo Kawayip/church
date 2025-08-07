@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { eventsAPI, Event } from '../services/api';
+import { SEO } from '../components/SEO';
 
 export const SingleEvent: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -139,6 +140,17 @@ export const SingleEvent: React.FC = () => {
 
   return (
     <div className="pt-16 min-h-screen bg-gray-50 dark:bg-slate-900">
+      {event && (
+        <SEO
+          title={`${event.title} - Mt. Olives SDA Church`}
+          description={event.description || `Join us for ${event.title} at Mt. Olives SDA Church. ${event.event_date ? `Date: ${format(new Date(event.event_date), 'MMMM d, yyyy')}` : ''}`}
+          image={event.image_url || eventsAPI.getImageUrl(event.id)}
+          type="event"
+          publishedTime={event.created_at}
+          modifiedTime={event.updated_at}
+          tags={[event.event_type, 'church event', 'Mt. Olives SDA']}
+        />
+      )}
       {/* Hero Section */}
       <section className="relative">
         {/* Event Image */}
