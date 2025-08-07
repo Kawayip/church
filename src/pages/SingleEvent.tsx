@@ -345,16 +345,16 @@ export const SingleEvent: React.FC = () => {
                 {/* Contact Information */}
                 <div className="card p-6">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Need Help?</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center text-gray-600 dark:text-gray-400">
-                      <Phone className="h-4 w-4 mr-2" />
-                      <span className="text-sm">+256 123 456 789</span>
-                    </div>
-                    <div className="flex items-center text-gray-600 dark:text-gray-400">
-                      <Mail className="h-4 w-4 mr-2" />
-                      <span className="text-sm">info@church.com</span>
-                    </div>
-                  </div>
+                                     <div className="space-y-3">
+                     <div className="flex items-center text-gray-600 dark:text-gray-400">
+                       <Phone className="h-4 w-4 mr-2" />
+                       <span className="text-sm">+256 772 420868</span>
+                     </div>
+                     <div className="flex items-center text-gray-600 dark:text-gray-400">
+                       <Mail className="h-4 w-4 mr-2" />
+                       <span className="text-sm">info@mtolivesdachurch.com</span>
+                     </div>
+                   </div>
                 </div>
 
                 {/* Related Events */}
