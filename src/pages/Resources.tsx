@@ -43,7 +43,17 @@ export const Resources: React.FC = () => {
       const response = await resourcesAPI.getAll(params);
       
       if (response.success && response.data) {
-        setResources(response.data);
+        // Transform the data to handle snake_case to camelCase conversion
+        const transformedData = response.data.map((resource: any) => ({
+          ...resource,
+          downloadCount: resource.download_count || 0,
+          fileName: resource.file_name,
+          fileSize: resource.file_size,
+          fileType: resource.file_type,
+          mimeType: resource.mime_type,
+          isFeatured: resource.is_featured
+        }));
+        setResources(transformedData);
       } else {
         setError(response.message || 'Failed to fetch resources');
       }
@@ -78,7 +88,7 @@ export const Resources: React.FC = () => {
       // Update the resource's download count locally
       setResources(prev => prev.map(r => 
         r.id === resource.id 
-          ? { ...r, downloadCount: r.downloadCount + 1 }
+          ? { ...r, downloadCount: (r.downloadCount || 0) + 1 }
           : r
       ));
       

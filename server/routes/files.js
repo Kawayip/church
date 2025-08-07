@@ -485,7 +485,7 @@ router.post('/resources', authenticateToken, requireAdmin, [
     }
 });
 
-// Get resource file
+// Get resource file (serves actual file data for download)
 router.get('/resources/:id', async (req, res) => {
     try {
         const { id } = req.params;

@@ -3,7 +3,7 @@ const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const { pool } = require('../database/connection');
 
-// Get all resources with optional filtering
+// Get all resources with optional filtering (metadata only for faster loading)
 router.get('/', async (req, res) => {
   try {
     const { page = 1, limit = 20, category, search, featured } = req.query;
@@ -36,9 +36,10 @@ router.get('/', async (req, res) => {
     );
     const total = countResult[0].total;
     
-    // Get resources
+    // Get resources (excluding file_data for faster loading)
     const [resources] = await pool.execute(
-      `SELECT * FROM resources ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      `SELECT id, title, description, file_type, category, file_name, file_size, mime_type, download_count, is_featured, created_at, updated_at 
+       FROM resources ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
       [...params, parseInt(limit), offset]
     );
     
@@ -70,7 +71,7 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
     
     const [resources] = await pool.execute(
-      'SELECT * FROM resources WHERE id = ?',
+      'SELECT id, title, description, file_type, category, file_name, file_size, mime_type, download_count, is_featured, created_at, updated_at FROM resources WHERE id = ?',
       [id]
     );
     
@@ -112,14 +113,14 @@ router.post('/', authenticateToken, async (req, res) => {
     const [result] = await pool.execute(
       `INSERT INTO resources (title, description, file_type, category, file_data, mime_type, file_name, file_size, is_featured, created_at, updated_at) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-      [title, description, fileType, category, fileData, mimeType, fileName, fileSize, isFeatured ? 1 : 0]
+      [title, description, fileType, category, Buffer.from(fileData, 'base64'), mimeType, fileName, fileSize, isFeatured ? 1 : 0]
     );
     
     const resourceId = result.insertId;
     
     // Get the created resource
     const [resources] = await pool.execute(
-      'SELECT * FROM resources WHERE id = ?',
+      'SELECT id, title, description, file_type, category, file_name, file_size, mime_type, download_count, is_featured, created_at, updated_at FROM resources WHERE id = ?',
       [resourceId]
     );
     
@@ -146,7 +147,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     
     // Check if resource exists
     const [existingResources] = await pool.execute(
-      'SELECT * FROM resources WHERE id = ?',
+      'SELECT id, title, description, file_type, category, file_name, file_size, mime_type, download_count, is_featured, created_at, updated_at FROM resources WHERE id = ?',
       [id]
     );
     
@@ -167,7 +168,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     
     // Get updated resource
     const [resources] = await pool.execute(
-      'SELECT * FROM resources WHERE id = ?',
+      'SELECT id, title, description, file_type, category, file_name, file_size, mime_type, download_count, is_featured, created_at, updated_at FROM resources WHERE id = ?',
       [id]
     );
     
@@ -193,7 +194,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     
     // Check if resource exists
     const [existingResources] = await pool.execute(
-      'SELECT * FROM resources WHERE id = ?',
+      'SELECT id FROM resources WHERE id = ?',
       [id]
     );
     
