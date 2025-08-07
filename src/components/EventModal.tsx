@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Calendar, Clock, MapPin, Tag, Image, Loader2, Upload, Trash2 } from 'lucide-react';
 import { eventsAPI, Event, CreateEventRequest, UpdateEventRequest } from '../services/api';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 interface EventModalProps {
   isOpen: boolean;
@@ -39,6 +41,28 @@ export const EventModal: React.FC<EventModalProps> = ({
     { value: 'outreach', label: 'Outreach' },
     { value: 'youth', label: 'Youth Event' },
     { value: 'special', label: 'Special Event' }
+  ];
+
+  // Quill editor configuration
+  const quillModules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'align': [] }],
+      ['link'],
+      ['clean']
+    ],
+  };
+
+  const quillFormats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike',
+    'list', 'bullet',
+    'color', 'background',
+    'align',
+    'link'
   ];
 
   useEffect(() => {
@@ -275,14 +299,42 @@ export const EventModal: React.FC<EventModalProps> = ({
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Description
                   </label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white"
-                    placeholder="Enter event description"
-                  />
+                  <div className="border border-gray-300 dark:border-slate-600 rounded-lg overflow-hidden">
+                    <ReactQuill
+                      theme="snow"
+                      value={formData.description}
+                      onChange={(value) => {
+                        setFormData(prev => ({ ...prev, description: value }));
+                        if (errors.description) {
+                          setErrors(prev => ({ ...prev, description: '' }));
+                        }
+                      }}
+                      modules={quillModules}
+                      formats={quillFormats}
+                      placeholder="Enter event description..."
+                      style={{ height: '150px' }}
+                      className="dark:bg-slate-700"
+                    />
+                  </div>
+                  <style jsx>{`
+                    .ql-editor {
+                      min-height: 100px;
+                      color: inherit;
+                    }
+                    .ql-toolbar {
+                      border-top: none;
+                      border-left: none;
+                      border-right: none;
+                      background-color: #f9fafb;
+                    }
+                    .dark .ql-toolbar {
+                      background-color: #334155;
+                      border-color: #475569;
+                    }
+                    .dark .ql-editor {
+                      color: #e2e8f0;
+                    }
+                  `}</style>
                 </div>
 
                 {/* Date and Time */}

@@ -220,9 +220,10 @@ export const SingleEvent: React.FC = () => {
                     {event.title}
                   </h1>
                   {event.description && (
-                    <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-                      {event.description}
-                    </p>
+                    <div 
+                      className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed prose prose-lg max-w-none"
+                      dangerouslySetInnerHTML={{ __html: event.description }}
+                    />
                   )}
                 </div>
 

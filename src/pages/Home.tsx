@@ -620,9 +620,10 @@ export const Home: React.FC = () => {
                       {event.title}
                     </h3>
                     {event.description && (
-                      <p className="text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
-                        {event.description}
-                      </p>
+                      <div 
+                        className="text-gray-600 dark:text-gray-300 mb-3 line-clamp-2 prose prose-sm max-w-none"
+                        dangerouslySetInnerHTML={{ __html: event.description }}
+                      />
                     )}
                     <div className="space-y-2">
                       {event.event_time && (

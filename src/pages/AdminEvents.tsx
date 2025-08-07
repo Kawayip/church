@@ -310,9 +310,10 @@ export const AdminEvents: React.FC = () => {
 
                 {/* Description */}
                 {event.description && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">
-                    {event.description}
-                  </p>
+                  <div 
+                    className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-3 prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: event.description }}
+                  />
                 )}
 
                 {/* Actions */}
