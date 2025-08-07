@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Download, Search, Filter, BookOpen, Music, Video, Calendar, Loader2, AlertCircle } from 'lucide-react';
 import { resourcesAPI, filesAPI, type Resource } from '../services/api';
-import { SEO, SEOConfigs } from '../components/SEO';
+
 import { trackDownloadClick } from '../services/downloadTracking';
 
 export const Resources: React.FC = () => {
@@ -142,7 +142,7 @@ export const Resources: React.FC = () => {
 
   return (
     <div className="pt-16">
-      <SEO {...SEOConfigs.resources} />
+
       {/* Hero Section */}
       <section className="py-20 section-light">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -19,6 +19,7 @@ const filesRoutes = require('./routes/files');
 const postsRoutes = require('./routes/posts');
 const resourcesRoutes = require('./routes/resources');
 const downloadsRoutes = require('./routes/downloads');
+const socialRoutes = require('./routes/social');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -57,6 +58,39 @@ app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 // File routes for BLOB handling
 app.use('/api/files', filesRoutes);
 
+// Social media crawler detection middleware
+app.use((req, res, next) => {
+  const userAgent = req.get('User-Agent') || '';
+  const isSocialCrawler = /facebookexternalhit|Twitterbot|WhatsApp|LinkedInBot|TelegramBot|Discordbot/i.test(userAgent);
+  
+  if (isSocialCrawler) {
+    // Handle social media crawlers
+    const path = req.path;
+    
+    // Event pages
+    if (path.match(/^\/events\/(\d+)$/)) {
+      const eventId = path.match(/^\/events\/(\d+)$/)[1];
+      return res.redirect(`/api/social/event/${eventId}`);
+    }
+    
+    // Post pages
+    if (path.match(/^\/posts\/(\d+)$/)) {
+      const postId = path.match(/^\/posts\/(\d+)$/)[1];
+      return res.redirect(`/api/social/post/${postId}`);
+    }
+    
+    // General pages
+    const pageTypes = ['home', 'about', 'events', 'ministries', 'resources', 'contact'];
+    for (const pageType of pageTypes) {
+      if (path === `/${pageType}` || (pageType === 'home' && path === '/')) {
+        return res.redirect(`/api/social/page/${pageType}`);
+      }
+    }
+  }
+  
+  next();
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
@@ -76,6 +110,7 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/posts', postsRoutes);
 app.use('/api/resources', resourcesRoutes);
 app.use('/api/downloads', downloadsRoutes);
+app.use('/api/social', socialRoutes);
 
 // Additional API routes for other features
 app.get('/api/dashboard/stats', async (req, res) => {
@@ -118,12 +153,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found'
-  });
+// Serve React app for all other routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
 // Initialize database and start server

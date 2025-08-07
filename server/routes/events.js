@@ -9,7 +9,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const { featured, type, limit } = req.query;
-    let query = 'SELECT * FROM events';
+    let query = 'SELECT id, title, description, event_date, event_time, end_time, location, event_type, is_featured, image_type, image_name, created_at, updated_at FROM events';
     let params = [];
     let conditions = [];
 
@@ -56,7 +56,7 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
 
     const [events] = await pool.execute(
-      'SELECT * FROM events WHERE id = ?',
+      'SELECT id, title, description, event_date, event_time, end_time, location, event_type, is_featured, image_type, image_name, created_at, updated_at FROM events WHERE id = ?',
       [id]
     );
 
@@ -245,7 +245,7 @@ router.get('/upcoming/events', async (req, res) => {
     const { limit = 5 } = req.query;
 
     const [events] = await pool.execute(
-      'SELECT * FROM events WHERE event_date >= CURDATE() ORDER BY event_date ASC, event_time ASC LIMIT ?',
+      'SELECT id, title, description, event_date, event_time, end_time, location, event_type, is_featured, image_type, image_name, created_at, updated_at FROM events WHERE event_date >= CURDATE() ORDER BY event_date ASC, event_time ASC LIMIT ?',
       [parseInt(limit)]
     );
 
