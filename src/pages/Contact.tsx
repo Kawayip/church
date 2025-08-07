@@ -189,15 +189,36 @@ export const Contact: React.FC = () => {
               transition={{ duration: 0.8 }}
               className="space-y-8"
             >
-              {/* Map Placeholder */}
+              {/* Interactive Google Map */}
               <div className="card p-6">
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Find Us</h3>
-                <div className="aspect-video bg-gray-100 dark:bg-slate-900 rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <MapPin className="h-12 w-12 text-emerald-500 dark:text-emerald-400 mx-auto mb-2" />
-                    <p className="text-gray-600 dark:text-gray-400">Interactive map would be embedded here</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">Naalya, Kampala, Uganda</p>
-                  </div>
+                <div className="aspect-video bg-gray-100 dark:bg-slate-900 rounded-lg overflow-hidden">
+                  <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.7534!2d32.6207!3d0.3476!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x177db1d1c3c3c3c3%3A0x3c3c3c3c3c3c3c3c!2sMt+Olives+SDA+Church+Naalya!5e0!3m2!1sen!2sug!4v1234567890"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="Mt Olives SDA Church Naalya Location"
+                    className="w-full h-full"
+                  ></iframe>
+                </div>
+                <div className="mt-4 text-center">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Mt Olives SDA Church Naalya</strong><br />
+                    Opolot Close, Ndagire Rd, Wakiso
+                  </p>
+                  <a
+                    href="https://maps.google.com/?q=Mt+Olives+SDA+Church+Naalya,Kampala,Uganda"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center mt-2 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 text-sm font-medium"
+                  >
+                    <MapPin className="h-4 w-4 mr-1" />
+                    Open in Google Maps
+                  </a>
                 </div>
               </div>
 
@@ -212,7 +233,7 @@ export const Contact: React.FC = () => {
                     <Phone className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
                     <div>
                       <div className="text-gray-900 dark:text-white font-medium">Call Us</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">+256 700 123 456</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">+256 772 420868</div>
                     </div>
                   </a>
                   <a
@@ -222,7 +243,7 @@ export const Contact: React.FC = () => {
                     <Mail className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
                     <div>
                       <div className="text-gray-900 dark:text-white font-medium">Email Us</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">info@mtolivessda.org</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">info@mtolivesdachurch.com</div>
                     </div>
                   </a>
                   <a
@@ -232,7 +253,7 @@ export const Contact: React.FC = () => {
                     <MessageCircle className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
                     <div>
                       <div className="text-gray-900 dark:text-white font-medium">WhatsApp</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">+256 700 123 456</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">+256 772 420868</div>
                     </div>
                   </a>
                 </div>
@@ -251,8 +272,8 @@ export const Contact: React.FC = () => {
                     <span className="text-gray-900 dark:text-white">9:00 AM - 2:00 PM</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-300">Sabbath</span>
-                    <span className="text-gray-900 dark:text-white">9:00 AM - 1:00 PM</span>
+                    <span className="text-gray-600 dark:text-gray-300">Saturday</span>
+                    <span className="text-gray-900 dark:text-white">Closed for Sabbath Worship</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-300">Sunday</span>
@@ -279,7 +300,7 @@ export const Contact: React.FC = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
-                href="tel:+256700123456"
+                href="tel:+256772420868"
                 className="btn-primary flex items-center justify-center space-x-2"
               >
                 <Phone className="h-5 w-5" />
