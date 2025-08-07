@@ -25,6 +25,13 @@ export const Gallery: React.FC = () => {
       });
       
       if (response.success && response.data) {
+        console.log('Gallery items fetched:', response.data);
+        // Debug: Test first image URL
+        if (response.data.length > 0) {
+          const firstItem = response.data[0];
+          console.log('First item:', firstItem);
+          console.log('Image URL:', galleryAPI.getImage(firstItem.thumbnail_image_id));
+        }
         setItems(response.data);
         if (response.pagination) {
           setTotalPages(response.pagination.pages);
@@ -163,6 +170,13 @@ export const Gallery: React.FC = () => {
                           src={galleryAPI.getImage(item.thumbnail_image_id)} 
                           alt={item.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            console.error('Image failed to load:', item.thumbnail_image_id, e);
+                            e.currentTarget.style.display = 'none';
+                          }}
+                          onLoad={() => {
+                            console.log('Image loaded successfully:', item.thumbnail_image_id);
+                          }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
                         
@@ -244,6 +258,13 @@ export const Gallery: React.FC = () => {
                 src={galleryAPI.getImage(selectedItem.thumbnail_image_id)} 
                 alt={selectedItem.title}
                 className="w-full max-h-96 object-contain rounded-lg"
+                onError={(e) => {
+                  console.error('Modal image failed to load:', selectedItem.thumbnail_image_id, e);
+                  e.currentTarget.style.display = 'none';
+                }}
+                onLoad={() => {
+                  console.log('Modal image loaded successfully:', selectedItem.thumbnail_image_id);
+                }}
               />
               
               <div className="mt-4">
