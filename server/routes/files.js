@@ -63,6 +63,121 @@ router.get('/gallery/:id', async (req, res) => {
     }
 });
 
+// Get all gallery images
+router.get('/gallery', async (req, res) => {
+    try {
+        const { category, page = 1, limit = 20, search } = req.query;
+        const offset = (page - 1) * limit;
+        
+        let query = `
+            SELECT g.id, g.title, g.description, g.category, g.created_at, 
+                   u.first_name, u.last_name
+            FROM gallery g
+            LEFT JOIN users u ON g.uploaded_by = u.id
+            WHERE 1=1
+        `;
+        const params = [];
+        
+        if (category && category !== 'all') {
+            query += ' AND g.category = ?';
+            params.push(category);
+        }
+        
+        if (search) {
+            query += ' AND (g.title LIKE ? OR g.description LIKE ?)';
+            params.push(`%${search}%`, `%${search}%`);
+        }
+        
+        query += ' ORDER BY g.created_at DESC LIMIT ? OFFSET ?';
+        params.push(parseInt(limit), offset);
+        
+        const [rows] = await pool.execute(query, params);
+        
+        // Get total count for pagination
+        let countQuery = 'SELECT COUNT(*) as total FROM gallery WHERE 1=1';
+        const countParams = [];
+        
+        if (category && category !== 'all') {
+            countQuery += ' AND category = ?';
+            countParams.push(category);
+        }
+        
+        if (search) {
+            countQuery += ' AND (title LIKE ? OR description LIKE ?)';
+            countParams.push(`%${search}%`, `%${search}%`);
+        }
+        
+        const [countResult] = await pool.execute(countQuery, countParams);
+        const total = countResult[0].total;
+        
+        res.json({
+            success: true,
+            data: rows,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total,
+                pages: Math.ceil(total / limit)
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching gallery images:', error);
+        res.status(500).json({ success: false, message: 'Error fetching gallery images' });
+    }
+});
+
+// Delete gallery image
+router.delete('/gallery/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const [result] = await pool.execute(
+            'DELETE FROM gallery WHERE id = ?',
+            [id]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: 'Image not found' });
+        }
+        
+        res.json({ success: true, message: 'Image deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting image:', error);
+        res.status(500).json({ success: false, message: 'Error deleting image' });
+    }
+});
+
+// Update gallery image
+router.put('/gallery/:id', authenticateToken, requireAdmin, [
+    body('title').notEmpty().withMessage('Title is required'),
+    body('description').optional(),
+    body('category').isIn(['events', 'services', 'outreach', 'youth', 'general']).withMessage('Invalid category')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ success: false, errors: errors.array() });
+        }
+        
+        const { id } = req.params;
+        const { title, description, category } = req.body;
+        
+        const [result] = await pool.execute(
+            'UPDATE gallery SET title = ?, description = ?, category = ? WHERE id = ?',
+            [title, description, category, id]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: 'Image not found' });
+        }
+        
+        res.json({ success: true, message: 'Image updated successfully' });
+    } catch (error) {
+        console.error('Error updating image:', error);
+        res.status(500).json({ success: false, message: 'Error updating image' });
+    }
+});
+
 // Upload resource file
 router.post('/resources', authenticateToken, requireAdmin, [
     body('title').notEmpty().withMessage('Title is required'),

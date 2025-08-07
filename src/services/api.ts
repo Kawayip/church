@@ -571,6 +571,72 @@ interface CreateResourceRequest {
 
 interface UpdateResourceRequest extends Partial<CreateResourceRequest> {}
 
+// Gallery API functions
+export interface GalleryImage {
+  id: number;
+  title: string;
+  description?: string;
+  category: 'events' | 'services' | 'outreach' | 'youth' | 'general';
+  created_at: string;
+  first_name?: string;
+  last_name?: string;
+}
+
+export interface CreateGalleryImageRequest {
+  title: string;
+  description?: string;
+  category: 'events' | 'services' | 'outreach' | 'youth' | 'general';
+  imageData: string;
+  imageType: string;
+  imageName: string;
+}
+
+export interface UpdateGalleryImageRequest {
+  title: string;
+  description?: string;
+  category: 'events' | 'services' | 'outreach' | 'youth' | 'general';
+}
+
+export const galleryAPI = {
+  getAll: async (params?: {
+    page?: number;
+    limit?: number;
+    category?: string;
+    search?: string;
+  }): Promise<ApiResponse<GalleryImage[]>> => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.limit) searchParams.append('limit', params.limit.toString());
+    if (params?.category) searchParams.append('category', params.category);
+    if (params?.search) searchParams.append('search', params.search);
+    
+    const queryString = searchParams.toString();
+    return apiRequest(`/files/gallery${queryString ? `?${queryString}` : ''}`);
+  },
+
+  upload: async (data: CreateGalleryImageRequest): Promise<ApiResponse<{ id: number }>> => {
+    return apiRequest('/files/gallery', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  update: async (id: number, data: UpdateGalleryImageRequest): Promise<ApiResponse> => {
+    return apiRequest(`/files/gallery/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+
+  delete: async (id: number): Promise<ApiResponse> => {
+    return apiRequest(`/files/gallery/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  getImage: (id: number): string => `${API_BASE_URL}/files/gallery/${id}`
+};
+
 // File handling API
 export const filesAPI = {
   // Upload image to gallery

@@ -14,6 +14,7 @@ import { ResourceModal } from '../components/ResourceModal';
 import { AdminPosts } from './AdminPosts';
 import { AdminMinistries } from './AdminMinistries';
 import { AdminEvents } from './AdminEvents';
+import { AdminGallery } from './AdminGallery';
 
 export const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -236,6 +237,9 @@ export const AdminDashboard: React.FC = () => {
       
       case 'events':
         return <AdminEvents />;
+      
+      case 'gallery':
+        return <AdminGallery />;
       
       case 'resources':
         return (
