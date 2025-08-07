@@ -213,7 +213,7 @@ export const Home: React.FC = () => {
                 transition={{ duration: 0.6, delay: 0.8 }}
                 whileHover={{ scale: 1.05 }}
               >
-                Mt. Olives SDA Church
+                Mt. Olives SDA Church 
               </motion.span>
             </motion.h1>
             <motion.p 
