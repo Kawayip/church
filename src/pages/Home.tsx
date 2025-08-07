@@ -206,7 +206,7 @@ export const Home: React.FC = () => {
               >
                 Welcome to
               </motion.span>
-              <motion.span 
+              {/* <motion.span 
                 className="block text-white hero-text-shadow-lg hero-text-glow text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl"
                 initial={{ opacity: 0, x: 50 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -214,7 +214,7 @@ export const Home: React.FC = () => {
                 whileHover={{ scale: 1.05 }}
               >
                 Mt. Olives SDA Church 
-              </motion.span>
+              </motion.span> */}
             </motion.h1>
             <motion.p 
               className="text-base sm:text-lg md:text-xl lg:text-2xl text-body text-white mb-6 md:mb-8 max-w-4xl mx-auto leading-relaxed hero-text-shadow px-4"
