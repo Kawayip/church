@@ -61,21 +61,27 @@ app.use('/api/files', filesRoutes);
 // Social media crawler detection middleware
 app.use((req, res, next) => {
   const userAgent = req.get('User-Agent') || '';
-  const isSocialCrawler = /facebookexternalhit|Twitterbot|WhatsApp|LinkedInBot|TelegramBot|Discordbot/i.test(userAgent);
+  const isSocialCrawler = /facebookexternalhit|Twitterbot|WhatsApp|LinkedInBot|TelegramBot|Discordbot|facebook|twitter|whatsapp|linkedin|telegram|discord/i.test(userAgent);
+  
+  console.log('User-Agent:', userAgent);
+  console.log('Is Social Crawler:', isSocialCrawler);
   
   if (isSocialCrawler) {
     // Handle social media crawlers
     const path = req.path;
+    console.log('Social crawler detected for path:', path);
     
     // Event pages
     if (path.match(/^\/events\/(\d+)$/)) {
       const eventId = path.match(/^\/events\/(\d+)$/)[1];
+      console.log('Redirecting event crawler to:', `/api/social/event/${eventId}`);
       return res.redirect(`/api/social/event/${eventId}`);
     }
     
     // Post pages
     if (path.match(/^\/posts\/(\d+)$/)) {
       const postId = path.match(/^\/posts\/(\d+)$/)[1];
+      console.log('Redirecting post crawler to:', `/api/social/post/${postId}`);
       return res.redirect(`/api/social/post/${postId}`);
     }
     
@@ -83,6 +89,7 @@ app.use((req, res, next) => {
     const pageTypes = ['home', 'about', 'events', 'ministries', 'resources', 'contact'];
     for (const pageType of pageTypes) {
       if (path === `/${pageType}` || (pageType === 'home' && path === '/')) {
+        console.log('Redirecting page crawler to:', `/api/social/page/${pageType}`);
         return res.redirect(`/api/social/page/${pageType}`);
       }
     }

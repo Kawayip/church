@@ -17,12 +17,18 @@ function generateSocialMetaHTML(data) {
     siteName = 'Mt. Olives SDA Church'
   } = data;
 
-  // Ensure image URL is absolute
-  const fullImageUrl = image && image.startsWith('http') 
-    ? image 
-    : image 
-      ? `${process.env.FRONTEND_URL || 'https://mtolivesdachurch.com'}${image}`
-      : `${process.env.FRONTEND_URL || 'https://mtolivesdachurch.com'}/images/logos/church-logo.png`;
+  // Ensure image URL is absolute and accessible
+  let fullImageUrl;
+  if (image && image.startsWith('http')) {
+    fullImageUrl = image;
+  } else if (image) {
+    fullImageUrl = `${process.env.FRONTEND_URL || 'https://mtolivesdachurch.com'}${image}`;
+  } else {
+    fullImageUrl = `${process.env.FRONTEND_URL || 'https://mtolivesdachurch.com'}/images/logos/church-logo.png`;
+  }
+  
+  // Ensure HTTPS for social media crawlers
+  fullImageUrl = fullImageUrl.replace(/^http:/, 'https:');
 
   return `
 <!DOCTYPE html>
@@ -134,6 +140,7 @@ function generateSocialMetaHTML(data) {
 router.get('/event/:id', async (req, res) => {
   try {
     const eventId = parseInt(req.params.id);
+    console.log('Generating social metadata for event:', eventId);
     
     const [events] = await pool.execute(
       'SELECT * FROM events WHERE id = ?',
@@ -141,16 +148,26 @@ router.get('/event/:id', async (req, res) => {
     );
 
     if (events.length === 0) {
+      console.log('Event not found:', eventId);
       return res.status(404).send('Event not found');
     }
 
     const event = events[0];
+    console.log('Event found:', event.title);
+    
     const cleanDescription = cleanHtmlText(event.description || '', 160);
+    console.log('Clean description:', cleanDescription);
+    
+    const imageUrl = event.image_name 
+      ? `${process.env.BACKEND_URL || 'https://mtolivesdachurch.com'}/api/events/${eventId}/image`
+      : `${process.env.FRONTEND_URL || 'https://mtolivesdachurch.com'}/images/logos/church-logo.png`;
+    
+    console.log('Image URL:', imageUrl);
     
     const metadata = {
       title: event.title,
       description: cleanDescription,
-      image: event.image_name ? `${process.env.BACKEND_URL || 'https://mtolivesdachurch.com'}/api/events/${eventId}/image` : `${process.env.FRONTEND_URL || 'https://mtolivesdachurch.com'}/images/logos/church-logo.png`,
+      image: imageUrl,
       url: `${process.env.FRONTEND_URL || 'https://mtolivesdachurch.com'}/events/${eventId}`,
       type: 'event',
       publishedTime: event.event_date,
@@ -158,6 +175,7 @@ router.get('/event/:id', async (req, res) => {
       author: 'Mt. Olives SDA Church'
     };
 
+    console.log('Generated metadata:', metadata);
     const html = generateSocialMetaHTML(metadata);
     res.setHeader('Content-Type', 'text/html');
     res.send(html);
@@ -268,6 +286,56 @@ router.get('/page/:type', async (req, res) => {
   } catch (error) {
     console.error('Error generating page metadata:', error);
     res.status(500).send('Internal server error');
+  }
+});
+
+// Test route to manually check social metadata
+router.get('/test/event/:id', async (req, res) => {
+  try {
+    const eventId = parseInt(req.params.id);
+    console.log('Testing social metadata for event:', eventId);
+    
+    const [events] = await pool.execute(
+      'SELECT * FROM events WHERE id = ?',
+      [eventId]
+    );
+
+    if (events.length === 0) {
+      return res.json({ error: 'Event not found' });
+    }
+
+    const event = events[0];
+    const cleanDescription = cleanHtmlText(event.description || '', 160);
+    
+    const imageUrl = event.image_name 
+      ? `${process.env.BACKEND_URL || 'https://mtolivesdachurch.com'}/api/events/${eventId}/image`
+      : `${process.env.FRONTEND_URL || 'https://mtolivesdachurch.com'}/images/logos/church-logo.png`;
+    
+    const metadata = {
+      title: event.title,
+      description: cleanDescription,
+      image: imageUrl,
+      url: `${process.env.FRONTEND_URL || 'https://mtolivesdachurch.com'}/events/${eventId}`,
+      type: 'event',
+      publishedTime: event.event_date,
+      modifiedTime: event.updated_at,
+      author: 'Mt. Olives SDA Church'
+    };
+
+    res.json({
+      success: true,
+      metadata,
+      event: {
+        id: event.id,
+        title: event.title,
+        image_name: event.image_name,
+        description: event.description
+      }
+    });
+
+  } catch (error) {
+    console.error('Error testing event metadata:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
