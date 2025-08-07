@@ -34,6 +34,8 @@ export const SingleEvent: React.FC = () => {
       const response = await eventsAPI.getById(eventId);
       
       if (response.success && response.data) {
+        console.log('Single event fetched:', response.data);
+        console.log('Event image URL:', eventsAPI.getImageUrl(eventId));
         setEvent(response.data);
         fetchRelatedEvents(response.data.event_type, eventId);
       } else {
@@ -155,12 +157,31 @@ export const SingleEvent: React.FC = () => {
       {/* Hero Section */}
       <section className="relative">
         {/* Event Image */}
-        {(event.image_url || event.image_data) ? (
+        {(event.image_url || event.image_name) ? (
           <div className="h-96 md:h-[500px] relative overflow-hidden">
             <img
               src={event.image_url || eventsAPI.getImageUrl(event.id)}
               alt={event.title}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                console.error('Single event image failed to load:', event.id, e);
+                // Show fallback if image fails to load
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const parent = target.parentElement;
+                if (parent) {
+                  parent.innerHTML = `
+                    <div class="w-full h-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                      <svg class="h-24 w-24 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                      </svg>
+                    </div>
+                  `;
+                }
+              }}
+              onLoad={() => {
+                console.log('Single event image loaded successfully:', event.id);
+              }}
             />
           </div>
         ) : (

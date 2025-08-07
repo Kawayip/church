@@ -25,6 +25,13 @@ export const Events: React.FC = () => {
       const response = await eventsAPI.getAll();
       
       if (response.success && response.data) {
+        console.log('Events fetched:', response.data);
+        // Debug: Check first event for image data
+        if (response.data.length > 0) {
+          const firstEvent = response.data[0];
+          console.log('First event:', firstEvent);
+          console.log('Event image URL:', eventsAPI.getImageUrl(firstEvent.id));
+        }
         setEvents(response.data);
       } else {
         setError(response.message || 'Failed to fetch events');
@@ -126,17 +133,21 @@ export const Events: React.FC = () => {
                     className="card overflow-hidden hover:scale-105 transition-all duration-300 group cursor-pointer"
                   >
                     <div className="relative h-48 overflow-hidden">
-                      {(event.image_url || event.image_data) ? (
+                      {(event.image_url || event.image_name) ? (
                         <img
                           src={event.image_url || eventsAPI.getImageUrl(event.id)}
                           alt={event.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           onError={(e) => {
+                            console.error('Event image failed to load:', event.id, e);
                             // Show fallback if image fails to load
                             const target = e.target as HTMLImageElement;
                             target.style.display = 'none';
                             const fallback = target.nextElementSibling as HTMLElement;
                             if (fallback) fallback.style.display = 'flex';
+                          }}
+                          onLoad={() => {
+                            console.log('Event image loaded successfully:', event.id);
                           }}
                         />
                       ) : null}

@@ -252,15 +252,19 @@ export const AdminEvents: React.FC = () => {
               className="card overflow-hidden"
             >
               {/* Event Image */}
-              {(event.image_url || event.image_data) && (
+              {(event.image_url || event.image_name) && (
                 <div className="h-48 overflow-hidden">
                   <img
                     src={event.image_url || eventsAPI.getImageUrl(event.id)}
                     alt={event.title}
                     className="w-full h-full object-cover"
                     onError={(e) => {
+                      console.error('Admin event image failed to load:', event.id, e);
                       // Hide image if it fails to load
                       (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                    onLoad={() => {
+                      console.log('Admin event image loaded successfully:', event.id);
                     }}
                   />
                 </div>

@@ -589,12 +589,31 @@ export const Home: React.FC = () => {
                   onClick={() => window.location.href = `/events/${event.id}`}
                 >
                   {/* Event Image */}
-                  {(event.image_url || event.image_data) ? (
+                  {(event.image_url || event.image_name) ? (
                     <div className="h-48 overflow-hidden">
                       <img
                         src={event.image_url || eventsAPI.getImageUrl(event.id)}
                         alt={event.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                          console.error('Home event image failed to load:', event.id, e);
+                          // Show fallback if image fails to load
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = `
+                              <div class="h-48 bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                                <svg class="h-12 w-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                              </div>
+                            `;
+                          }
+                        }}
+                        onLoad={() => {
+                          console.log('Home event image loaded successfully:', event.id);
+                        }}
                       />
                     </div>
                   ) : (
