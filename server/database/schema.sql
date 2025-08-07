@@ -116,7 +116,36 @@ CREATE TABLE IF NOT EXISTS ministries (
     INDEX idx_slug (slug)
 );
 
--- Gallery table
+-- Gallery collections table
+CREATE TABLE IF NOT EXISTS gallery_collections (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    category ENUM('events', 'services', 'outreach', 'youth', 'general') DEFAULT 'general',
+    thumbnail_image_id INT,
+    uploaded_by INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- Gallery images table
+CREATE TABLE IF NOT EXISTS gallery_images (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    collection_id INT,
+    title VARCHAR(200),
+    description TEXT,
+    image_data LONGBLOB NOT NULL,
+    image_type VARCHAR(100) NOT NULL,
+    image_name VARCHAR(255) NOT NULL,
+    sort_order INT DEFAULT 0,
+    uploaded_by INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (collection_id) REFERENCES gallery_collections(id) ON DELETE CASCADE,
+    FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- Legacy gallery table (for backward compatibility)
 CREATE TABLE IF NOT EXISTS gallery (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(200) NOT NULL,

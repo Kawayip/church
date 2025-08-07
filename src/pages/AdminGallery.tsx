@@ -5,23 +5,27 @@ import {
   Image, Plus, Edit, Trash2, Search, Filter, 
   Loader2, AlertCircle, X, Upload, Eye
 } from 'lucide-react';
-import { galleryAPI, type GalleryImage, type CreateGalleryImageRequest } from '../services/api';
+import { galleryAPI, type GalleryItem, type CreateGalleryImageRequest, type CreateGalleryCollectionRequest, type GalleryCollection } from '../services/api';
 import { filesAPI } from '../services/api';
 
 export const AdminGallery: React.FC = () => {
-  const [images, setImages] = useState<GalleryImage[]>([]);
+  const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
+  const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
+  const [selectedCollection, setSelectedCollection] = useState<GalleryCollection | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isCollectionUploadModalOpen, setIsCollectionUploadModalOpen] = useState(false);
+  const [isCollectionViewModalOpen, setIsCollectionViewModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [uploading, setUploading] = useState(false);
+  const [uploadMode, setUploadMode] = useState<'single' | 'collection'>('single');
 
-  // Form state
+  // Form state for single image
   const [formData, setFormData] = useState<CreateGalleryImageRequest>({
     title: '',
     description: '',
@@ -32,6 +36,15 @@ export const AdminGallery: React.FC = () => {
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
+  // Form state for collection
+  const [collectionFormData, setCollectionFormData] = useState<CreateGalleryCollectionRequest>({
+    title: '',
+    description: '',
+    category: 'general',
+    images: []
+  });
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+
   const categories = [
     { id: 'all', name: 'All Categories' },
     { id: 'events', name: 'Events' },
@@ -41,7 +54,7 @@ export const AdminGallery: React.FC = () => {
     { id: 'general', name: 'General' }
   ];
 
-  const fetchImages = async () => {
+  const fetchItems = async () => {
     setLoading(true);
     setError(null);
     try {
@@ -53,22 +66,22 @@ export const AdminGallery: React.FC = () => {
       });
       
       if (response.success && response.data) {
-        setImages(response.data);
+        setItems(response.data);
         if (response.pagination) {
           setTotalPages(response.pagination.pages);
         }
       } else {
-        setError(response.message || 'Failed to fetch images');
+        setError(response.message || 'Failed to fetch gallery items');
       }
     } catch (err) {
-      setError('Failed to fetch images');
+      setError('Failed to fetch gallery items');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchImages();
+    fetchItems();
   }, [currentPage, selectedCategory, searchTerm]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,6 +93,13 @@ export const AdminGallery: React.FC = () => {
         imageName: file.name,
         imageType: file.type
       }));
+    }
+  };
+
+  const handleFilesSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length > 0) {
+      setSelectedFiles(files);
     }
   };
 
@@ -113,7 +133,7 @@ export const AdminGallery: React.FC = () => {
           imageName: ''
         });
         setSelectedFile(null);
-        fetchImages();
+        fetchItems();
       } else {
         setError(response.message || 'Failed to upload image');
       }
@@ -124,27 +144,75 @@ export const AdminGallery: React.FC = () => {
     }
   };
 
+  const handleCollectionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedFiles.length === 0) {
+      setError('Please select at least one image file');
+      return;
+    }
+
+    setUploading(true);
+    setError(null);
+
+    try {
+      const images = [];
+      for (const file of selectedFiles) {
+        const imageData = await filesAPI.fileToBase64(file);
+        images.push({
+          imageData,
+          imageType: file.type,
+          imageName: file.name
+        });
+      }
+
+      const uploadData = {
+        ...collectionFormData,
+        images
+      };
+
+      const response = await galleryAPI.uploadCollection(uploadData);
+      
+      if (response.success) {
+        setIsCollectionUploadModalOpen(false);
+        setCollectionFormData({
+          title: '',
+          description: '',
+          category: 'general',
+          images: []
+        });
+        setSelectedFiles([]);
+        fetchItems();
+      } else {
+        setError(response.message || 'Failed to upload collection');
+      }
+    } catch (err) {
+      setError('Failed to upload collection');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this image?')) return;
+    if (!confirm('Are you sure you want to delete this item?')) return;
 
     try {
       const response = await galleryAPI.delete(id);
       if (response.success) {
-        fetchImages();
+        fetchItems();
       } else {
-        setError(response.message || 'Failed to delete image');
+        setError(response.message || 'Failed to delete item');
       }
     } catch (err) {
-      setError('Failed to delete image');
+      setError('Failed to delete item');
     }
   };
 
-  const handleEdit = (image: GalleryImage) => {
-    setSelectedImage(image);
+  const handleEdit = (item: GalleryItem) => {
+    setSelectedItem(item);
     setFormData({
-      title: image.title,
-      description: image.description || '',
-      category: image.category,
+      title: item.title,
+      description: item.description || '',
+      category: item.category,
       imageData: '',
       imageType: '',
       imageName: ''
@@ -152,15 +220,29 @@ export const AdminGallery: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const handleViewCollection = async (id: number) => {
+    try {
+      const response = await galleryAPI.getCollection(id);
+      if (response.success && response.data) {
+        setSelectedCollection(response.data);
+        setIsCollectionViewModalOpen(true);
+      } else {
+        setError(response.message || 'Failed to fetch collection');
+      }
+    } catch (err) {
+      setError('Failed to fetch collection');
+    }
+  };
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedImage) return;
+    if (!selectedItem) return;
 
     setUploading(true);
     setError(null);
 
     try {
-      const response = await galleryAPI.update(selectedImage.id, {
+      const response = await galleryAPI.update(selectedItem.id, {
         title: formData.title,
         description: formData.description,
         category: formData.category
@@ -168,7 +250,7 @@ export const AdminGallery: React.FC = () => {
       
       if (response.success) {
         setIsModalOpen(false);
-        setSelectedImage(null);
+        setSelectedItem(null);
         setFormData({
           title: '',
           description: '',
@@ -177,19 +259,19 @@ export const AdminGallery: React.FC = () => {
           imageType: '',
           imageName: ''
         });
-        fetchImages();
+        fetchItems();
       } else {
-        setError(response.message || 'Failed to update image');
+        setError(response.message || 'Failed to update item');
       }
     } catch (err) {
-      setError('Failed to update image');
+      setError('Failed to update item');
     } finally {
       setUploading(false);
     }
   };
 
   const openModal = () => {
-    setSelectedImage(null);
+    setSelectedItem(null);
     setFormData({
       title: '',
       description: '',
@@ -208,15 +290,30 @@ export const AdminGallery: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Gallery Management</h2>
-          <p className="text-gray-600 dark:text-gray-400">Upload and manage church gallery images</p>
+          <p className="text-gray-600 dark:text-gray-400">Upload and manage church gallery images and collections</p>
         </div>
-        <button
-          onClick={openModal}
-          className="btn-primary flex items-center space-x-2"
-        >
-          <Plus className="h-5 w-5" />
-          <span>Add Image</span>
-        </button>
+        <div className="flex space-x-3">
+          <button
+            onClick={() => {
+              setUploadMode('single');
+              openModal();
+            }}
+            className="btn-primary flex items-center space-x-2"
+          >
+            <Plus className="h-5 w-5" />
+            <span>Add Image</span>
+          </button>
+          <button
+            onClick={() => {
+              setUploadMode('collection');
+              setIsCollectionUploadModalOpen(true);
+            }}
+            className="btn-secondary flex items-center space-x-2"
+          >
+            <Image className="h-5 w-5" />
+            <span>Add Collection</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -253,38 +350,46 @@ export const AdminGallery: React.FC = () => {
       ) : error ? (
         <div className="text-center py-12">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-red-600 dark:text-red-400 mb-2">Error Loading Images</h3>
+          <h3 className="text-xl font-semibold text-red-600 dark:text-red-400 mb-2">Error Loading Gallery Items</h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
-          <button onClick={fetchImages} className="btn-primary">Try Again</button>
+          <button onClick={fetchItems} className="btn-primary">Try Again</button>
         </div>
-      ) : images.length === 0 ? (
-        <div className="text-center py-12">
-          <Image className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">No Images Found</h3>
-          <p className="text-gray-500 dark:text-gray-500 mb-4">
-            {searchTerm || selectedCategory !== 'all' 
-              ? 'Try adjusting your search or filter criteria'
-              : 'Get started by uploading your first image'
-            }
-          </p>
-          {!searchTerm && selectedCategory === 'all' && (
-            <button onClick={openModal} className="btn-primary">Upload First Image</button>
-          )}
-        </div>
+      ) : items.length === 0 ? (
+          <div className="text-center py-12">
+            <Image className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">No Gallery Items Found</h3>
+            <p className="text-gray-500 dark:text-gray-500 mb-4">
+              {searchTerm || selectedCategory !== 'all' 
+                ? 'Try adjusting your search or filter criteria'
+                : 'Get started by uploading your first image or collection'
+              }
+            </p>
+            {!searchTerm && selectedCategory === 'all' && (
+              <div className="flex space-x-3 justify-center">
+                <button onClick={openModal} className="btn-primary">Upload First Image</button>
+                <button 
+                  onClick={() => setIsCollectionUploadModalOpen(true)}
+                  className="btn-secondary"
+                >
+                  Upload First Collection
+                </button>
+              </div>
+            )}
+          </div>
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {images.map((image) => (
+            {items.map((item) => (
               <motion.div
-                key={image.id}
+                key={item.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
               >
                 <div className="relative aspect-square overflow-hidden">
                   <img
-                    src={galleryAPI.getImage(image.id)}
-                    alt={image.title}
+                    src={galleryAPI.getImage(item.thumbnail_image_id)}
+                    alt={item.title}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 hover:opacity-100 transition-opacity">
@@ -292,8 +397,12 @@ export const AdminGallery: React.FC = () => {
                       <div className="flex space-x-2">
                         <button
                           onClick={() => {
-                            setSelectedImage(image);
-                            setIsViewModalOpen(true);
+                            if (item.type === 'collection') {
+                              handleViewCollection(item.id);
+                            } else {
+                              setSelectedItem(item);
+                              setIsViewModalOpen(true);
+                            }
                           }}
                           className="flex-1 bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded text-sm hover:bg-white/30 transition-colors"
                         >
@@ -301,13 +410,13 @@ export const AdminGallery: React.FC = () => {
                           View
                         </button>
                         <button
-                          onClick={() => handleEdit(image)}
+                          onClick={() => handleEdit(item)}
                           className="bg-emerald-500 text-white px-3 py-1 rounded text-sm hover:bg-emerald-600 transition-colors"
                         >
                           <Edit className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(image.id)}
+                          onClick={() => handleDelete(item.id)}
                           className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -315,17 +424,24 @@ export const AdminGallery: React.FC = () => {
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Collection indicator */}
+                  {item.type === 'collection' && (
+                    <div className="absolute top-3 left-3 bg-emerald-500 text-white px-2 py-1 rounded text-xs font-medium">
+                      {item.image_count} images
+                    </div>
+                  )}
                 </div>
                 <div className="p-4">
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-1 line-clamp-1">
-                    {image.title}
+                    {item.title}
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
-                    {image.description}
+                    {item.description}
                   </p>
                   <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-500">
-                    <span className="capitalize">{image.category}</span>
-                    <span>{new Date(image.created_at).toLocaleDateString()}</span>
+                    <span className="capitalize">{item.category}</span>
+                    <span>{new Date(item.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
               </motion.div>
@@ -486,7 +602,7 @@ export const AdminGallery: React.FC = () => {
       )}
 
       {/* View Modal */}
-      {isViewModalOpen && selectedImage && (
+      {isViewModalOpen && selectedItem && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -496,7 +612,7 @@ export const AdminGallery: React.FC = () => {
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {selectedImage.title}
+                  {selectedItem.title}
                 </h3>
                 <button
                   onClick={() => setIsViewModalOpen(false)}
@@ -508,15 +624,15 @@ export const AdminGallery: React.FC = () => {
 
               <div className="space-y-4">
                 <img
-                  src={galleryAPI.getImage(selectedImage.id)}
-                  alt={selectedImage.title}
+                  src={galleryAPI.getImage(selectedItem.thumbnail_image_id)}
+                  alt={selectedItem.title}
                   className="w-full rounded-lg"
                 />
                 
                 <div>
                   <h4 className="font-medium text-gray-900 dark:text-white mb-2">Description</h4>
                   <p className="text-gray-600 dark:text-gray-400">
-                    {selectedImage.description || 'No description provided'}
+                    {selectedItem.description || 'No description provided'}
                   </p>
                 </div>
 
@@ -524,13 +640,13 @@ export const AdminGallery: React.FC = () => {
                   <div>
                     <span className="text-gray-500 dark:text-gray-500">Category:</span>
                     <span className="ml-2 capitalize text-gray-900 dark:text-white">
-                      {selectedImage.category}
+                      {selectedItem.category}
                     </span>
                   </div>
                   <div>
                     <span className="text-gray-500 dark:text-gray-500">Uploaded:</span>
                     <span className="ml-2 text-gray-900 dark:text-white">
-                      {new Date(selectedImage.created_at).toLocaleDateString()}
+                      {new Date(selectedItem.created_at).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
@@ -539,20 +655,245 @@ export const AdminGallery: React.FC = () => {
                   <button
                     onClick={() => {
                       setIsViewModalOpen(false);
-                      handleEdit(selectedImage);
+                      handleEdit(selectedItem);
                     }}
                     className="flex-1 btn-primary"
                   >
-                    Edit Image
+                    Edit Item
                   </button>
                   <button
                     onClick={() => {
                       setIsViewModalOpen(false);
-                      handleDelete(selectedImage.id);
+                      handleDelete(selectedItem.id);
                     }}
                     className="flex-1 bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors"
                   >
-                    Delete Image
+                    Delete Item
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Collection Upload Modal */}
+      {isCollectionUploadModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+          >
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Upload Image Collection
+                </h3>
+                <button
+                  onClick={() => setIsCollectionUploadModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCollectionSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Collection Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={collectionFormData.title}
+                    onChange={(e) => setCollectionFormData(prev => ({ ...prev, title: e.target.value }))}
+                    className="form-input w-full"
+                    placeholder="e.g., Saturday Service Photos"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={collectionFormData.description}
+                    onChange={(e) => setCollectionFormData(prev => ({ ...prev, description: e.target.value }))}
+                    className="form-textarea w-full"
+                    rows={3}
+                    placeholder="Describe this collection of images"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Category *
+                  </label>
+                  <select
+                    required
+                    value={collectionFormData.category}
+                    onChange={(e) => setCollectionFormData(prev => ({ ...prev, category: e.target.value as any }))}
+                    className="form-select w-full"
+                  >
+                    {categories.filter(cat => cat.id !== 'all').map(category => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Images *
+                  </label>
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleFilesSelect}
+                      className="hidden"
+                      id="collection-images-upload"
+                      required
+                    />
+                    <label htmlFor="collection-images-upload" className="cursor-pointer">
+                      <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {selectedFiles.length > 0 
+                          ? `${selectedFiles.length} image(s) selected`
+                          : 'Click to select multiple images'
+                        }
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                        PNG, JPG, GIF up to 10MB each
+                      </p>
+                    </label>
+                  </div>
+                  
+                  {selectedFiles.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Selected Files:
+                      </h4>
+                      <div className="space-y-1">
+                        {selectedFiles.map((file, index) => (
+                          <div key={index} className="text-xs text-gray-600 dark:text-gray-400">
+                            {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {error && (
+                  <div className="text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-md">
+                    {error}
+                  </div>
+                )}
+
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsCollectionUploadModalOpen(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={uploading}
+                    className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {uploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      'Upload Collection'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Collection View Modal */}
+      {isCollectionViewModalOpen && selectedCollection && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+          >
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {selectedCollection.title}
+                </h3>
+                <button
+                  onClick={() => {
+                    setIsCollectionViewModalOpen(false);
+                    setSelectedCollection(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-2">Description</h4>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {selectedCollection.description || 'No description provided'}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-500">Category:</span>
+                    <span className="ml-2 capitalize text-gray-900 dark:text-white">
+                      {selectedCollection.category}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-500">Images:</span>
+                    <span className="ml-2 text-gray-900 dark:text-white">
+                      {selectedCollection.images.length}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {selectedCollection.images.map((image, index) => (
+                    <div key={image.id} className="relative group">
+                      <img
+                        src={galleryAPI.getImage(image.id)}
+                        alt={image.title || `Image ${index + 1}`}
+                        className="w-full aspect-square object-cover rounded-lg"
+                      />
+                      {image.title && (
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white p-2 rounded-b-lg text-xs">
+                          {image.title}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    onClick={() => {
+                      setIsCollectionViewModalOpen(false);
+                      setSelectedCollection(null);
+                      handleDelete(selectedCollection.id);
+                    }}
+                    className="flex-1 bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors"
+                  >
+                    Delete Collection
                   </button>
                 </div>
               </div>

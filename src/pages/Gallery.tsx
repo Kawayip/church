@@ -2,18 +2,19 @@ import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Image, Video, Music, FileText, X, Play, Download, Loader2, AlertCircle } from 'lucide-react';
-import { galleryAPI, type GalleryImage } from '../services/api';
+import { galleryAPI, type GalleryItem, type GalleryCollection } from '../services/api';
 
 export const Gallery: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedMedia, setSelectedMedia] = useState<GalleryImage | null>(null);
-  const [images, setImages] = useState<GalleryImage[]>([]);
+  const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
+  const [selectedCollection, setSelectedCollection] = useState<GalleryCollection | null>(null);
+  const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const fetchImages = async () => {
+  const fetchItems = async () => {
     setLoading(true);
     setError(null);
     try {
@@ -24,22 +25,22 @@ export const Gallery: React.FC = () => {
       });
       
       if (response.success && response.data) {
-        setImages(response.data);
+        setItems(response.data);
         if (response.pagination) {
           setTotalPages(response.pagination.pages);
         }
       } else {
-        setError(response.message || 'Failed to fetch images');
+        setError(response.message || 'Failed to fetch gallery items');
       }
     } catch (err) {
-      setError('Failed to fetch images');
+      setError('Failed to fetch gallery items');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchImages();
+    fetchItems();
   }, [currentPage, selectedCategory]);
 
   const categories = [
@@ -51,10 +52,23 @@ export const Gallery: React.FC = () => {
     { id: 'general', name: 'General', icon: Image }
   ];
 
-  const filteredItems = images;
+  const filteredItems = items;
 
   const getTypeIcon = (type: string) => {
     return Image; // All gallery items are images
+  };
+
+  const handleViewCollection = async (id: number) => {
+    try {
+      const response = await galleryAPI.getCollection(id);
+      if (response.success && response.data) {
+        setSelectedCollection(response.data);
+      } else {
+        setError(response.message || 'Failed to fetch collection');
+      }
+    } catch (err) {
+      setError('Failed to fetch collection');
+    }
   };
 
   return (
@@ -116,7 +130,7 @@ export const Gallery: React.FC = () => {
               <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-red-600 dark:text-red-400 mb-2">Error Loading Images</h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
-              <button onClick={fetchImages} className="btn-primary">Try Again</button>
+              <button onClick={fetchItems} className="btn-primary">Try Again</button>
             </div>
           ) : filteredItems.length === 0 ? (
             <div className="text-center py-12">
@@ -136,11 +150,17 @@ export const Gallery: React.FC = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.6, delay: index * 0.1 }}
                       className="card overflow-hidden hover:scale-105 transition-all duration-300 group cursor-pointer"
-                      onClick={() => setSelectedMedia(item)}
+                      onClick={() => {
+                    if (item.type === 'collection') {
+                      handleViewCollection(item.id);
+                    } else {
+                      setSelectedItem(item);
+                    }
+                  }}
                     >
                       <div className="relative aspect-square overflow-hidden">
                         <img 
-                          src={galleryAPI.getImage(item.id)} 
+                          src={galleryAPI.getImage(item.thumbnail_image_id)} 
                           alt={item.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
@@ -150,6 +170,13 @@ export const Gallery: React.FC = () => {
                         <div className="absolute top-3 right-3 p-2 bg-black/80 dark:bg-slate-900/80 rounded-lg">
                           <TypeIcon className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
                         </div>
+
+                        {/* Collection indicator */}
+                        {item.type === 'collection' && (
+                          <div className="absolute top-3 left-3 bg-emerald-500 text-white px-2 py-1 rounded text-xs font-medium">
+                            {item.image_count} images
+                          </div>
+                        )}
                       </div>
 
                       <div className="p-4">
@@ -198,14 +225,14 @@ export const Gallery: React.FC = () => {
         </div>
       </section>
 
-      {/* Modal */}
-      {selectedMedia && (
+      {/* Single Image Modal */}
+      {selectedItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90">
           <div className="bg-white dark:bg-slate-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-700">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{selectedMedia.title}</h3>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{selectedItem.title}</h3>
               <button
-                onClick={() => setSelectedMedia(null)}
+                onClick={() => setSelectedItem(null)}
                 className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
               >
                 <X className="h-6 w-6" />
@@ -214,27 +241,81 @@ export const Gallery: React.FC = () => {
             
             <div className="p-6">
               <img 
-                src={galleryAPI.getImage(selectedMedia.id)} 
-                alt={selectedMedia.title}
+                src={galleryAPI.getImage(selectedItem.thumbnail_image_id)} 
+                alt={selectedItem.title}
                 className="w-full max-h-96 object-contain rounded-lg"
               />
               
               <div className="mt-4">
-                <p className="text-gray-600 dark:text-gray-300">{selectedMedia.description}</p>
+                <p className="text-gray-600 dark:text-gray-300">{selectedItem.description}</p>
                 <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
                   <div>
                     <span className="text-gray-500 dark:text-gray-500">Category:</span>
                     <span className="ml-2 capitalize text-gray-900 dark:text-white">
-                      {selectedMedia.category}
+                      {selectedItem.category}
                     </span>
                   </div>
                   <div>
                     <span className="text-gray-500 dark:text-gray-500">Uploaded:</span>
                     <span className="ml-2 text-gray-900 dark:text-white">
-                      {new Date(selectedMedia.created_at).toLocaleDateString()}
+                      {new Date(selectedItem.created_at).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Collection Modal */}
+      {selectedCollection && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90">
+          <div className="bg-white dark:bg-slate-800 rounded-xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-700">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{selectedCollection.title}</h3>
+              <button
+                onClick={() => setSelectedCollection(null)}
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="mb-4">
+                <p className="text-gray-600 dark:text-gray-300">{selectedCollection.description}</p>
+                <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-500">Category:</span>
+                    <span className="ml-2 capitalize text-gray-900 dark:text-white">
+                      {selectedCollection.category}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-500">Images:</span>
+                    <span className="ml-2 text-gray-900 dark:text-white">
+                      {selectedCollection.images.length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {selectedCollection.images.map((image, index) => (
+                  <div key={image.id} className="relative group">
+                    <img
+                      src={galleryAPI.getImage(image.id)}
+                      alt={image.title || `Image ${index + 1}`}
+                      className="w-full aspect-square object-cover rounded-lg"
+                    />
+                    {image.title && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white p-2 rounded-b-lg text-xs">
+                        {image.title}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           </div>

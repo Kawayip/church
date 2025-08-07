@@ -572,14 +572,41 @@ interface CreateResourceRequest {
 interface UpdateResourceRequest extends Partial<CreateResourceRequest> {}
 
 // Gallery API functions
-export interface GalleryImage {
+export interface GalleryItem {
   id: number;
   title: string;
   description?: string;
   category: 'events' | 'services' | 'outreach' | 'youth' | 'general';
   created_at: string;
+  updated_at?: string;
   first_name?: string;
   last_name?: string;
+  image_count: number;
+  type: 'collection' | 'single';
+  thumbnail_image_id: number;
+}
+
+export interface GalleryImage {
+  id: number;
+  title?: string;
+  description?: string;
+  image_type: string;
+  image_name: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface GalleryCollection {
+  id: number;
+  title: string;
+  description?: string;
+  category: 'events' | 'services' | 'outreach' | 'youth' | 'general';
+  thumbnail_image_id: number;
+  created_at: string;
+  updated_at: string;
+  first_name?: string;
+  last_name?: string;
+  images: GalleryImage[];
 }
 
 export interface CreateGalleryImageRequest {
@@ -589,6 +616,19 @@ export interface CreateGalleryImageRequest {
   imageData: string;
   imageType: string;
   imageName: string;
+}
+
+export interface CreateGalleryCollectionRequest {
+  title: string;
+  description?: string;
+  category: 'events' | 'services' | 'outreach' | 'youth' | 'general';
+  images: {
+    title?: string;
+    description?: string;
+    imageData: string;
+    imageType: string;
+    imageName: string;
+  }[];
 }
 
 export interface UpdateGalleryImageRequest {
@@ -603,7 +643,7 @@ export const galleryAPI = {
     limit?: number;
     category?: string;
     search?: string;
-  }): Promise<ApiResponse<GalleryImage[]>> => {
+  }): Promise<ApiResponse<GalleryItem[]>> => {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.append('page', params.page.toString());
     if (params?.limit) searchParams.append('limit', params.limit.toString());
@@ -614,8 +654,19 @@ export const galleryAPI = {
     return apiRequest(`/files/gallery${queryString ? `?${queryString}` : ''}`);
   },
 
+  getCollection: async (id: number): Promise<ApiResponse<GalleryCollection>> => {
+    return apiRequest(`/files/gallery/collections/${id}`);
+  },
+
   upload: async (data: CreateGalleryImageRequest): Promise<ApiResponse<{ id: number }>> => {
     return apiRequest('/files/gallery', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  uploadCollection: async (data: CreateGalleryCollectionRequest): Promise<ApiResponse<{ id: number; imageCount: number }>> => {
+    return apiRequest('/files/gallery/collections', {
       method: 'POST',
       body: JSON.stringify(data)
     });
@@ -634,7 +685,7 @@ export const galleryAPI = {
     });
   },
 
-  getImage: (id: number): string => `${API_BASE_URL}/files/gallery/${id}`
+  getImage: (id: number): string => `${API_BASE_URL}/files/gallery/images/${id}`
 };
 
 // File handling API

@@ -5,7 +5,89 @@ const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Upload image to gallery
+// Upload gallery collection
+router.post('/gallery/collections', authenticateToken, requireAdmin, [
+    body('title').notEmpty().withMessage('Title is required'),
+    body('description').optional(),
+    body('category').isIn(['events', 'services', 'outreach', 'youth', 'general']).withMessage('Invalid category'),
+    body('images').isArray({ min: 1 }).withMessage('At least one image is required'),
+    body('images.*.imageData').notEmpty().withMessage('Image data is required'),
+    body('images.*.imageType').notEmpty().withMessage('Image type is required'),
+    body('images.*.imageName').notEmpty().withMessage('Image name is required')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ success: false, errors: errors.array() });
+        }
+
+        const { title, description, category, images } = req.body;
+        const uploadedBy = req.user.id;
+
+        // Start transaction
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        try {
+            // Create collection
+            const [collectionResult] = await connection.execute(
+                'INSERT INTO gallery_collections (title, description, category, uploaded_by) VALUES (?, ?, ?, ?)',
+                [title, description, category, uploadedBy]
+            );
+
+            const collectionId = collectionResult.insertId;
+            let thumbnailImageId = null;
+
+            // Insert images
+            for (let i = 0; i < images.length; i++) {
+                const image = images[i];
+                const [imageResult] = await connection.execute(
+                    'INSERT INTO gallery_images (collection_id, title, description, image_data, image_type, image_name, sort_order, uploaded_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                    [
+                        collectionId,
+                        image.title || null,
+                        image.description || null,
+                        Buffer.from(image.imageData, 'base64'),
+                        image.imageType,
+                        image.imageName,
+                        i,
+                        uploadedBy
+                    ]
+                );
+
+                // Set first image as thumbnail
+                if (i === 0) {
+                    thumbnailImageId = imageResult.insertId;
+                }
+            }
+
+            // Update collection with thumbnail
+            await connection.execute(
+                'UPDATE gallery_collections SET thumbnail_image_id = ? WHERE id = ?',
+                [thumbnailImageId, collectionId]
+            );
+
+            await connection.commit();
+
+            res.status(201).json({
+                success: true,
+                message: 'Collection uploaded successfully',
+                id: collectionId,
+                imageCount: images.length
+            });
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Error uploading collection:', error);
+        res.status(500).json({ success: false, message: 'Error uploading collection' });
+    }
+});
+
+// Upload single image to gallery (legacy support)
 router.post('/gallery', authenticateToken, requireAdmin, [
     body('title').notEmpty().withMessage('Title is required'),
     body('description').optional(),
@@ -63,56 +145,77 @@ router.get('/gallery/:id', async (req, res) => {
     }
 });
 
-// Get all gallery images
+// Get all gallery items (collections and single images)
 router.get('/gallery', async (req, res) => {
     try {
         const { category, page = 1, limit = 20, search } = req.query;
         const offset = (page - 1) * limit;
         
-        let query = `
-            SELECT g.id, g.title, g.description, g.category, g.created_at, 
-                   u.first_name, u.last_name
+        // Query for collections
+        let collectionsQuery = `
+            SELECT 
+                gc.id, gc.title, gc.description, gc.category, gc.created_at,
+                gc.thumbnail_image_id, gc.updated_at,
+                u.first_name, u.last_name,
+                COUNT(gi.id) as image_count,
+                'collection' as type
+            FROM gallery_collections gc
+            LEFT JOIN users u ON gc.uploaded_by = u.id
+            LEFT JOIN gallery_images gi ON gc.id = gi.collection_id
+            WHERE 1=1
+        `;
+        
+        // Query for single images (legacy)
+        let singleImagesQuery = `
+            SELECT 
+                g.id, g.title, g.description, g.category, g.created_at,
+                g.id as thumbnail_image_id, g.created_at as updated_at,
+                u.first_name, u.last_name,
+                1 as image_count,
+                'single' as type
             FROM gallery g
             LEFT JOIN users u ON g.uploaded_by = u.id
             WHERE 1=1
         `;
+        
         const params = [];
+        const singleParams = [];
         
         if (category && category !== 'all') {
-            query += ' AND g.category = ?';
+            collectionsQuery += ' AND gc.category = ?';
+            singleImagesQuery += ' AND g.category = ?';
             params.push(category);
+            singleParams.push(category);
         }
         
         if (search) {
-            query += ' AND (g.title LIKE ? OR g.description LIKE ?)';
+            collectionsQuery += ' AND (gc.title LIKE ? OR gc.description LIKE ?)';
+            singleImagesQuery += ' AND (g.title LIKE ? OR g.description LIKE ?)';
             params.push(`%${search}%`, `%${search}%`);
+            singleParams.push(`%${search}%`, `%${search}%`);
         }
         
-        query += ' ORDER BY g.created_at DESC LIMIT ? OFFSET ?';
-        params.push(parseInt(limit), offset);
+        collectionsQuery += ' GROUP BY gc.id ORDER BY gc.created_at DESC';
+        singleImagesQuery += ' ORDER BY g.created_at DESC';
         
-        const [rows] = await pool.execute(query, params);
+        // Execute both queries
+        const [collections] = await pool.execute(collectionsQuery, params);
+        const [singleImages] = await pool.execute(singleImagesQuery, singleParams);
         
-        // Get total count for pagination
-        let countQuery = 'SELECT COUNT(*) as total FROM gallery WHERE 1=1';
-        const countParams = [];
+        // Combine and sort results
+        const allItems = [...collections, ...singleImages].sort((a, b) => 
+            new Date(b.created_at) - new Date(a.created_at)
+        );
         
-        if (category && category !== 'all') {
-            countQuery += ' AND category = ?';
-            countParams.push(category);
-        }
+        // Apply pagination
+        const paginatedItems = allItems.slice(offset, offset + parseInt(limit));
         
-        if (search) {
-            countQuery += ' AND (title LIKE ? OR description LIKE ?)';
-            countParams.push(`%${search}%`, `%${search}%`);
-        }
-        
-        const [countResult] = await pool.execute(countQuery, countParams);
-        const total = countResult[0].total;
+        // Get total count
+        const total = allItems.length;
         
         res.json({
             success: true,
-            data: rows,
+            data: paginatedItems,
             pagination: {
                 page: parseInt(page),
                 limit: parseInt(limit),
@@ -121,29 +224,113 @@ router.get('/gallery', async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Error fetching gallery images:', error);
-        res.status(500).json({ success: false, message: 'Error fetching gallery images' });
+        console.error('Error fetching gallery items:', error);
+        res.status(500).json({ success: false, message: 'Error fetching gallery items' });
     }
 });
 
-// Delete gallery image
+// Get collection details with all images
+router.get('/gallery/collections/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Get collection info
+        const [collectionRows] = await pool.execute(`
+            SELECT gc.*, u.first_name, u.last_name
+            FROM gallery_collections gc
+            LEFT JOIN users u ON gc.uploaded_by = u.id
+            WHERE gc.id = ?
+        `, [id]);
+        
+        if (collectionRows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Collection not found' });
+        }
+        
+        // Get all images in collection
+        const [imageRows] = await pool.execute(`
+            SELECT id, title, description, image_type, image_name, sort_order, created_at
+            FROM gallery_images
+            WHERE collection_id = ?
+            ORDER BY sort_order ASC
+        `, [id]);
+        
+        const collection = collectionRows[0];
+        collection.images = imageRows;
+        
+        res.json({
+            success: true,
+            data: collection
+        });
+    } catch (error) {
+        console.error('Error fetching collection:', error);
+        res.status(500).json({ success: false, message: 'Error fetching collection' });
+    }
+});
+
+// Get image from gallery (supports both single images and collection images)
+router.get('/gallery/images/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Try to get from gallery_images first (collections)
+        let [rows] = await pool.execute(
+            'SELECT image_data, image_type, image_name FROM gallery_images WHERE id = ?',
+            [id]
+        );
+        
+        // If not found, try legacy gallery table
+        if (rows.length === 0) {
+            [rows] = await pool.execute(
+                'SELECT image_data, image_type, image_name FROM gallery WHERE id = ?',
+                [id]
+            );
+        }
+
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Image not found' });
+        }
+
+        const image = rows[0];
+        res.setHeader('Content-Type', image.image_type);
+        res.setHeader('Content-Disposition', `inline; filename="${image.image_name}"`);
+        res.send(image.image_data);
+    } catch (error) {
+        console.error('Error retrieving image:', error);
+        res.status(500).json({ success: false, message: 'Error retrieving image' });
+    }
+});
+
+// Delete gallery item (collection or single image)
 router.delete('/gallery/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         
-        const [result] = await pool.execute(
+        // Check if it's a collection first
+        const [collectionResult] = await pool.execute(
+            'DELETE FROM gallery_collections WHERE id = ?',
+            [id]
+        );
+        
+        if (collectionResult.affectedRows > 0) {
+            // Collection deleted (images will be deleted via CASCADE)
+            res.json({ success: true, message: 'Collection deleted successfully' });
+            return;
+        }
+        
+        // Try deleting as single image
+        const [imageResult] = await pool.execute(
             'DELETE FROM gallery WHERE id = ?',
             [id]
         );
         
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ success: false, message: 'Image not found' });
+        if (imageResult.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: 'Gallery item not found' });
         }
         
         res.json({ success: true, message: 'Image deleted successfully' });
     } catch (error) {
-        console.error('Error deleting image:', error);
-        res.status(500).json({ success: false, message: 'Error deleting image' });
+        console.error('Error deleting gallery item:', error);
+        res.status(500).json({ success: false, message: 'Error deleting gallery item' });
     }
 });
 
