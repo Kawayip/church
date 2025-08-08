@@ -10,6 +10,12 @@ export const Live: React.FC = () => {
   const [userName, setUserName] = useState('');
   const [showNameInput, setShowNameInput] = useState(false);
   const [showingRecentStream, setShowingRecentStream] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
   const {
     isLive,
     currentStream,
@@ -46,6 +52,96 @@ export const Live: React.FC = () => {
     }
   };
 
+  // Show notification
+  const showToast = (message: string) => {
+    setNotificationMessage(message);
+    setShowNotification(true);
+    setTimeout(() => setShowNotification(false), 3000);
+  };
+
+  // Share functionality
+  const handleShare = async () => {
+    const shareData = {
+      title: isLive ? 'Live Now: Mt. Olives SDA Church' : 'Mt. Olives SDA Church Live Stream',
+      text: isLive ? 'Join us live for worship service!' : 'Check out our latest services and upcoming streams.',
+      url: window.location.href
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        showToast('Shared successfully!');
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(window.location.href);
+        showToast('Link copied to clipboard!');
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+      // Fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        showToast('Link copied to clipboard!');
+      } catch (clipboardError) {
+        console.error('Clipboard error:', clipboardError);
+        showToast('Failed to share. Please copy the URL manually.');
+      }
+    }
+  };
+
+  // Fullscreen functionality
+  const handleFullscreen = () => {
+    const videoContainer = document.querySelector('.aspect-video');
+    if (videoContainer) {
+      if (!document.fullscreenElement) {
+        videoContainer.requestFullscreen().then(() => {
+          setIsFullscreen(true);
+        }).catch(err => {
+          console.error('Error entering fullscreen:', err);
+        });
+      } else {
+        document.exitFullscreen().then(() => {
+          setIsFullscreen(false);
+        }).catch(err => {
+          console.error('Error exiting fullscreen:', err);
+        });
+      }
+    }
+  };
+
+  // Listen for fullscreen changes
+  React.useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  // Close settings panel when clicking outside or pressing Escape
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (showSettings && !target.closest('.settings-panel') && !target.closest('[title="Settings"]')) {
+        setShowSettings(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showSettings) {
+        setShowSettings(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showSettings]);
+
   const getYouTubeEmbedUrl = (videoId: string) => {
     return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&controls=1&showinfo=0&fs=1&origin=${window.location.origin}`;
   };
@@ -76,6 +172,17 @@ export const Live: React.FC = () => {
 
   return (
     <div className="pt-16 min-h-screen bg-gray-50 dark:bg-slate-900">
+      {/* Notification Toast */}
+      {showNotification && (
+        <motion.div
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -50 }}
+          className="fixed top-20 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50"
+        >
+          {notificationMessage}
+        </motion.div>
+      )}
       {/* Live Stream Header */}
       <section className={`text-white py-6 ${showingRecentStream ? 'bg-gradient-to-r from-blue-600 to-blue-700' : (isLive ? 'bg-gradient-to-r from-red-600 to-red-700' : 'bg-gradient-to-r from-gray-600 to-gray-700')}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -112,7 +219,11 @@ export const Live: React.FC = () => {
               >
                 <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
               </button>
-              <button className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-colors">
+              <button 
+                onClick={handleShare}
+                className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-colors"
+                title="Share this page"
+              >
                 <Share2 className="h-5 w-5" />
               </button>
             </div>
@@ -205,11 +316,27 @@ export const Live: React.FC = () => {
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      <button className="text-white hover:text-gray-300">
+                      <button 
+                        className="text-white hover:text-gray-300"
+                        title="Play/Pause"
+                        onClick={() => {
+                          // For YouTube embed, we can't directly control play/pause
+                          // This will refresh the stream instead
+                          refreshStream();
+                        }}
+                      >
                         <Play className="h-6 w-6" />
                       </button>
-                      <button className="text-white hover:text-gray-300">
-                        <Volume2 className="h-6 w-6" />
+                      <button 
+                        className="text-white hover:text-gray-300"
+                        title={isMuted ? "Unmute" : "Mute"}
+                        onClick={() => setIsMuted(!isMuted)}
+                      >
+                        {isMuted ? (
+                          <Volume2 className="h-6 w-6" style={{ filter: 'grayscale(100%)' }} />
+                        ) : (
+                          <Volume2 className="h-6 w-6" />
+                        )}
                       </button>
                       <div className="text-white text-sm">
                         {showingRecentStream ? 'RECENT SERVICE' : (isLive ? 'LIVE' : '00:00 / 00:00')}
@@ -224,16 +351,100 @@ export const Live: React.FC = () => {
                           Back to Live
                         </button>
                       )}
-                      <button className="text-white hover:text-gray-300">
+                      <button 
+                        className="text-white hover:text-gray-300"
+                        title="Settings"
+                        onClick={() => setShowSettings(!showSettings)}
+                      >
                         <Settings className="h-6 w-6" />
                       </button>
-                      <button className="text-white hover:text-gray-300">
-                        <Maximize className="h-6 w-6" />
+                      <button 
+                        className="text-white hover:text-gray-300"
+                        title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                        onClick={handleFullscreen}
+                      >
+                        {isFullscreen ? (
+                          <Maximize className="h-6 w-6" style={{ transform: 'rotate(180deg)' }} />
+                        ) : (
+                          <Maximize className="h-6 w-6" />
+                        )}
                       </button>
                     </div>
                   </div>
                 </div>
               </div>
+
+              {/* Settings Panel */}
+              {showSettings && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="settings-panel absolute top-4 right-4 bg-black/90 backdrop-blur-sm rounded-lg p-4 text-white min-w-48 z-10"
+                >
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-sm mb-2">Stream Settings</h3>
+                    
+                    {/* Quality Setting */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Auto-refresh</span>
+                      <button 
+                        onClick={refreshStream}
+                        className="text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded"
+                      >
+                        Refresh Now
+                      </button>
+                    </div>
+
+                    {/* Mute Setting */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Mute</span>
+                      <button 
+                        onClick={() => setIsMuted(!isMuted)}
+                        className={`text-xs px-2 py-1 rounded ${isMuted ? 'bg-red-500' : 'bg-white/20 hover:bg-white/30'}`}
+                      >
+                        {isMuted ? 'On' : 'Off'}
+                      </button>
+                    </div>
+
+                    {/* Fullscreen Setting */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Fullscreen</span>
+                      <button 
+                        onClick={handleFullscreen}
+                        className={`text-xs px-2 py-1 rounded ${isFullscreen ? 'bg-blue-500' : 'bg-white/20 hover:bg-white/30'}`}
+                      >
+                        {isFullscreen ? 'Exit' : 'Enter'}
+                      </button>
+                    </div>
+
+                    {/* Copy URL */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Copy URL</span>
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(window.location.href);
+                          showToast('URL copied to clipboard!');
+                        }}
+                        className="text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded"
+                      >
+                        Copy
+                      </button>
+                    </div>
+
+                    <hr className="border-white/20" />
+
+                    {/* Stream Info */}
+                    <div className="text-xs space-y-1">
+                      <div>Status: {isLive ? 'Live' : 'Offline'}</div>
+                      {isLive && viewerCount > 0 && (
+                        <div>Viewers: {formatViewerCount(viewerCount)}</div>
+                      )}
+                      <div>Last Updated: {new Date().toLocaleTimeString()}</div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
             </motion.div>
 
             {/* Service Information */}
@@ -421,7 +632,7 @@ export const Live: React.FC = () => {
               </div>
             </motion.div>
 
-            {/* Upcoming Services */}
+            {/* Upcoming Services
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
@@ -438,7 +649,7 @@ export const Live: React.FC = () => {
                   </div>
                 ))}
               </div>
-            </motion.div>
+            </motion.div> */}
 
             {/* Quick Actions */}
             <motion.div
