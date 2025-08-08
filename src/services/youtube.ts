@@ -44,6 +44,13 @@ class YouTubeAPI {
     // You'll need to set these environment variables
     this.apiKey = import.meta.env.VITE_YOUTUBE_API_KEY || '';
     this.channelId = import.meta.env.VITE_YOUTUBE_CHANNEL_ID || '';
+    
+    // Debug: Check if environment variables are loaded
+    console.log('YouTube API Configuration:');
+    console.log('API Key exists:', !!this.apiKey);
+    console.log('Channel ID exists:', !!this.channelId);
+    console.log('API Key length:', this.apiKey.length);
+    console.log('Channel ID:', this.channelId);
   }
 
   // Check if API is properly configured
@@ -61,11 +68,17 @@ class YouTubeAPI {
     }
 
     try {
-      const response = await fetch(
-        `${this.baseUrl}/search?part=snippet&channelId=${this.channelId}&eventType=live&type=video&key=${this.apiKey}`
-      );
+      const url = `${this.baseUrl}/search?part=snippet&channelId=${this.channelId}&eventType=live&type=video&key=${this.apiKey}`;
+      console.log('YouTube API Request URL:', url.replace(this.apiKey, 'API_KEY_HIDDEN'));
+      
+      const response = await fetch(url);
+
+      console.log('YouTube API Response Status:', response.status);
+      console.log('YouTube API Response OK:', response.ok);
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('YouTube API Error Response:', errorText);
         throw new Error(`YouTube API error: ${response.status}`);
       }
 
