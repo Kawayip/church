@@ -1,9 +1,10 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Users, MessageCircle, Share2, Volume2, Maximize, Settings, RefreshCw, AlertCircle, ExternalLink, Calendar, Clock, Eye } from 'lucide-react';
+import { Play, Users, MessageCircle, Share2, Volume2, Maximize, Settings, RefreshCw, AlertCircle, ExternalLink, Calendar, Clock, Eye, Info } from 'lucide-react';
 import { useLiveStream } from '../hooks/useLiveStream';
 import { formatViewerCount, formatTimeAgo } from '../services/youtube';
+import { validateYouTubeConfig } from '../config/youtube';
 
 export const Live: React.FC = () => {
   const [chatMessage, setChatMessage] = useState('');
@@ -16,6 +17,11 @@ export const Live: React.FC = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
+  
+  // Check YouTube API configuration
+  const configStatus = validateYouTubeConfig();
+  const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date());
+  
   const {
     isLive,
     currentStream,
@@ -30,6 +36,13 @@ export const Live: React.FC = () => {
     refreshStream,
     sendChatMessage
   } = useLiveStream();
+
+  // Update timestamp when viewer count changes
+  React.useEffect(() => {
+    if (isLive && viewerCount > 0) {
+      setLastUpdateTime(new Date());
+    }
+  }, [viewerCount, isLive]);
 
   const upcomingServices = [
     { title: 'Sabbath Worship Service', date: 'Saturday, Jan 4', time: '11:00 AM' },
@@ -207,15 +220,23 @@ export const Live: React.FC = () => {
             </div>
             <div className="flex items-center space-x-4">
               {isLive && (
-                <div className="flex items-center space-x-2">
-                  <Users className="h-5 w-5" />
-                  <span>{formatViewerCount(viewerCount)} watching</span>
+                <div className="flex items-center space-x-3 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
+                    <Users className="h-5 w-5" />
+                    <span className="font-semibold">{formatViewerCount(viewerCount)}</span>
+                    <span className="text-sm opacity-90">watching live</span>
+                  </div>
+                  <div className="text-xs opacity-75">
+                    Updated {lastUpdateTime.toLocaleTimeString()}
+                  </div>
                 </div>
               )}
               <button 
                 onClick={refreshStream}
                 disabled={loading}
                 className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+                title="Refresh stream status"
               >
                 <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
               </button>
@@ -232,6 +253,37 @@ export const Live: React.FC = () => {
       </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {!configStatus.valid && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4"
+          >
+            <div className="flex items-start space-x-3">
+              <Info className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
+                  YouTube API Not Configured
+                </h3>
+                <p className="text-yellow-700 dark:text-yellow-300 text-sm mb-3">
+                  To display live viewer counts and stream information, you need to configure the YouTube API.
+                </p>
+                <div className="text-sm text-yellow-600 dark:text-yellow-400">
+                  <p className="font-medium mb-1">Missing configuration:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    {configStatus.errors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="mt-3 text-xs text-yellow-600 dark:text-yellow-400">
+                  <p>See <code className="bg-yellow-100 dark:bg-yellow-900 px-1 rounded">YOUTUBE_INTEGRATION_SETUP.md</code> for setup instructions.</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {error && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -341,6 +393,12 @@ export const Live: React.FC = () => {
                       <div className="text-white text-sm">
                         {showingRecentStream ? 'RECENT SERVICE' : (isLive ? 'LIVE' : '00:00 / 00:00')}
                       </div>
+                      {isLive && viewerCount > 0 && (
+                        <div className="flex items-center space-x-2 bg-black/50 px-3 py-1 rounded-full">
+                          <Eye className="h-4 w-4 text-red-400" />
+                          <span className="text-white text-sm font-medium">{formatViewerCount(viewerCount)}</span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center space-x-2">
                       {showingRecentStream && (
@@ -438,9 +496,15 @@ export const Live: React.FC = () => {
                     <div className="text-xs space-y-1">
                       <div>Status: {isLive ? 'Live' : 'Offline'}</div>
                       {isLive && viewerCount > 0 && (
-                        <div>Viewers: {formatViewerCount(viewerCount)}</div>
+                        <div className="flex items-center space-x-2">
+                          <Eye className="h-3 w-3 text-red-400" />
+                          <span>Viewers: {formatViewerCount(viewerCount)}</span>
+                        </div>
                       )}
-                      <div>Last Updated: {new Date().toLocaleTimeString()}</div>
+                      <div>Last Updated: {lastUpdateTime.toLocaleTimeString()}</div>
+                      {isLive && (
+                        <div className="text-green-400 font-medium">Real-time updates active</div>
+                      )}
                     </div>
                   </div>
                 </motion.div>

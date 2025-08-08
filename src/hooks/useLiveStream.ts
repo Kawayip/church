@@ -42,6 +42,7 @@ export const useLiveStream = (autoRefresh = true): UseLiveStreamReturn => {
 
   // Refs for managing intervals
   const streamIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const viewerCountIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const chatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const liveChatIdRef = useRef<string | null>(null);
   const nextPageTokenRef = useRef<string | undefined>(undefined);
@@ -94,6 +95,20 @@ export const useLiveStream = (autoRefresh = true): UseLiveStreamReturn => {
       setLoading(false);
     }
   }, []);
+
+  // Fetch viewer count separately for more frequent updates
+  const fetchViewerCount = useCallback(async () => {
+    if (!isLive || !currentStream?.id) return;
+
+    try {
+      const streamDetails = await youtubeAPI.getStreamDetails(currentStream.id);
+      if (streamDetails.viewerCount !== undefined) {
+        setViewerCount(streamDetails.viewerCount);
+      }
+    } catch (err) {
+      console.error('Error fetching viewer count:', err);
+    }
+  }, [isLive, currentStream?.id]);
 
   // Fetch offline content (recent and upcoming streams)
   const fetchOfflineContent = useCallback(async () => {
@@ -186,7 +201,7 @@ export const useLiveStream = (autoRefresh = true): UseLiveStreamReturn => {
       // Initial fetch
       fetchCurrentStream();
 
-      // Set up polling interval
+      // Set up polling interval for stream status
       streamIntervalRef.current = setInterval(() => {
         fetchCurrentStream();
       }, 30000); // Check every 30 seconds
@@ -198,6 +213,31 @@ export const useLiveStream = (autoRefresh = true): UseLiveStreamReturn => {
       };
     }
   }, [autoRefresh, fetchCurrentStream]);
+
+  // Set up frequent viewer count updates when live
+  useEffect(() => {
+    if (isLive && currentStream?.id) {
+      // Initial viewer count fetch
+      fetchViewerCount();
+      
+      // Set up frequent polling for viewer count (every 10 seconds)
+      viewerCountIntervalRef.current = setInterval(() => {
+        fetchViewerCount();
+      }, 10000); // Update every 10 seconds
+
+      return () => {
+        if (viewerCountIntervalRef.current) {
+          clearInterval(viewerCountIntervalRef.current);
+        }
+      };
+    } else {
+      // Clear viewer count interval when not live
+      if (viewerCountIntervalRef.current) {
+        clearInterval(viewerCountIntervalRef.current);
+        viewerCountIntervalRef.current = null;
+      }
+    }
+  }, [isLive, currentStream?.id, fetchViewerCount]);
 
   // Fetch offline content on initial load if not live
   useEffect(() => {
@@ -230,6 +270,9 @@ export const useLiveStream = (autoRefresh = true): UseLiveStreamReturn => {
     return () => {
       if (streamIntervalRef.current) {
         clearInterval(streamIntervalRef.current);
+      }
+      if (viewerCountIntervalRef.current) {
+        clearInterval(viewerCountIntervalRef.current);
       }
       if (chatIntervalRef.current) {
         clearInterval(chatIntervalRef.current);
