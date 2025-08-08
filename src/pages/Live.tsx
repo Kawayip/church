@@ -9,6 +9,7 @@ export const Live: React.FC = () => {
   const [chatMessage, setChatMessage] = useState('');
   const [userName, setUserName] = useState('');
   const [showNameInput, setShowNameInput] = useState(false);
+  const [showingRecentStream, setShowingRecentStream] = useState(false);
   const {
     isLive,
     currentStream,
@@ -46,7 +47,7 @@ export const Live: React.FC = () => {
   };
 
   const getYouTubeEmbedUrl = (videoId: string) => {
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&controls=1&showinfo=0&fs=1&origin=${window.location.origin}`;
   };
 
   const getYouTubeWatchUrl = (videoId: string) => {
@@ -76,20 +77,25 @@ export const Live: React.FC = () => {
   return (
     <div className="pt-16 min-h-screen bg-gray-50 dark:bg-slate-900">
       {/* Live Stream Header */}
-      <section className={`text-white py-6 ${isLive ? 'bg-gradient-to-r from-red-600 to-red-700' : 'bg-gradient-to-r from-gray-600 to-gray-700'}`}>
+      <section className={`text-white py-6 ${showingRecentStream ? 'bg-gradient-to-r from-blue-600 to-blue-700' : (isLive ? 'bg-gradient-to-r from-red-600 to-red-700' : 'bg-gradient-to-r from-gray-600 to-gray-700')}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                {isLive ? (
+                {showingRecentStream ? (
+                  <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+                ) : isLive ? (
                   <div className="w-3 h-3 bg-red-400 rounded-full animate-pulse"></div>
                 ) : (
                   <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
                 )}
-                <span className="font-semibold">{isLive ? 'LIVE' : 'OFFLINE'}</span>
+                <span className="font-semibold">
+                  {showingRecentStream ? 'RECENT' : (isLive ? 'LIVE' : 'OFFLINE')}
+                </span>
               </div>
               <h1 className="text-2xl font-bold">
-                {isLive ? (currentStream?.title || 'Sabbath Worship Service') : 'Live Stream'}
+                {showingRecentStream ? (recentStream?.title || 'Recent Service') : 
+                 (isLive ? (currentStream?.title || 'Sabbath Worship Service') : 'Live Stream')}
               </h1>
             </div>
             <div className="flex items-center space-x-4">
@@ -138,10 +144,10 @@ export const Live: React.FC = () => {
               className="bg-black rounded-xl overflow-hidden shadow-2xl"
             >
               <div className="aspect-video relative">
-                {isLive && currentStream ? (
+                {(isLive && currentStream) || showingRecentStream ? (
                   <iframe
-                    src={getYouTubeEmbedUrl(currentStream.id)}
-                    title={currentStream.title}
+                    src={getYouTubeEmbedUrl(showingRecentStream ? (recentStream?.id || currentStream?.id || '') : (currentStream?.id || ''))}
+                    title={showingRecentStream ? (recentStream?.title || currentStream?.title || 'Recent Service') : (currentStream?.title || 'Live Stream')}
                     className="w-full h-full"
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -150,7 +156,7 @@ export const Live: React.FC = () => {
                 ) : (
                   <>
                     <img 
-                      src={recentStream?.thumbnailUrl || currentStream?.thumbnailUrl || "https://images.pexels.com/photos/8466704/pexels-photo-8466704.jpeg"}
+                      src={recentStream?.thumbnailUrl || currentStream?.thumbnailUrl || "/images/ui/worship.jpg"}
                       alt="Live Stream"
                       className="w-full h-full object-cover"
                     />
@@ -179,16 +185,16 @@ export const Live: React.FC = () => {
                         )}
                         
                         {/* Show recent stream or current stream link */}
-                        {(recentStream || currentStream) && (
-                          <a
-                            href={getYouTubeWatchUrl(recentStream?.id || currentStream?.id || '')}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                        {(recentStream || currentStream) && !showingRecentStream && (
+                          <button
+                            onClick={() => {
+                              setShowingRecentStream(true);
+                            }}
                             className="inline-flex items-center space-x-2 mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
                           >
                             <span>Watch Latest Service</span>
-                            <ExternalLink className="h-4 w-4" />
-                          </a>
+                            <Play className="h-4 w-4" />
+                          </button>
                         )}
                       </div>
                     </div>
@@ -206,10 +212,18 @@ export const Live: React.FC = () => {
                         <Volume2 className="h-6 w-6" />
                       </button>
                       <div className="text-white text-sm">
-                        {isLive ? 'LIVE' : '00:00 / 00:00'}
+                        {showingRecentStream ? 'RECENT SERVICE' : (isLive ? 'LIVE' : '00:00 / 00:00')}
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
+                      {showingRecentStream && (
+                        <button 
+                          onClick={() => setShowingRecentStream(false)}
+                          className="text-white hover:text-gray-300 bg-black/50 px-3 py-1 rounded text-sm"
+                        >
+                          Back to Live
+                        </button>
+                      )}
                       <button className="text-white hover:text-gray-300">
                         <Settings className="h-6 w-6" />
                       </button>
