@@ -15,33 +15,50 @@ class AnalyticsService {
 
   // Parse user agent to get device info
   parseUserAgent(userAgent) {
-    const parser = new UAParser(userAgent);
-    const result = parser.getResult();
-    
-    let deviceType = 'desktop';
-    if (result.device.type === 'mobile') {
-      deviceType = 'mobile';
-    } else if (result.device.type === 'tablet') {
-      deviceType = 'tablet';
-    }
+    try {
+      const parser = new UAParser(userAgent || '');
+      const result = parser.getResult();
+      
+      let deviceType = 'desktop';
+      if (result.device.type === 'mobile') {
+        deviceType = 'mobile';
+      } else if (result.device.type === 'tablet') {
+        deviceType = 'tablet';
+      }
 
-    return {
-      deviceType,
-      browser: result.browser.name || 'Unknown',
-      os: result.os.name || 'Unknown',
-      screenResolution: null // Will be set by frontend
-    };
+      return {
+        deviceType,
+        browser: result.browser.name || 'Unknown',
+        os: result.os.name || 'Unknown',
+        screenResolution: null // Will be set by frontend
+      };
+    } catch (error) {
+      console.error('Error parsing user agent:', error);
+      return {
+        deviceType: 'desktop',
+        browser: 'Unknown',
+        os: 'Unknown',
+        screenResolution: null
+      };
+    }
   }
 
   // Get location from IP address
   getLocationFromIP(ip) {
     try {
+      if (!ip || ip === '127.0.0.1' || ip === 'localhost') {
+        return {
+          country: 'Unknown',
+          city: 'Unknown'
+        };
+      }
       const geo = geoip.lookup(ip);
       return {
         country: geo?.country || 'Unknown',
         city: geo?.city || 'Unknown'
       };
     } catch (error) {
+      console.error('Error getting location from IP:', error);
       return {
         country: 'Unknown',
         city: 'Unknown'
@@ -53,6 +70,8 @@ class AnalyticsService {
   async trackPageView(data) {
     const connection = await this.pool.getConnection();
     try {
+      console.log('Processing page view data:', data);
+      
       const {
         sessionId,
         pagePath,
@@ -64,8 +83,13 @@ class AnalyticsService {
         timeOnPage = 0
       } = data;
 
-      const deviceInfo = this.parseUserAgent(userAgent);
-      const location = this.getLocationFromIP(ipAddress);
+      // Validate required fields
+      if (!sessionId || !pagePath) {
+        throw new Error('Missing required fields: sessionId and pagePath');
+      }
+
+      const deviceInfo = this.parseUserAgent(userAgent || '');
+      const location = this.getLocationFromIP(ipAddress || '127.0.0.1');
 
       const query = `
         INSERT INTO page_views (
@@ -78,19 +102,20 @@ class AnalyticsService {
       const values = [
         sessionId,
         pagePath,
-        pageTitle,
-        referrer,
-        userAgent,
-        ipAddress,
+        pageTitle || '',
+        referrer || '',
+        userAgent || '',
+        ipAddress || '127.0.0.1',
         location.country,
         location.city,
         deviceInfo.deviceType,
         deviceInfo.browser,
         deviceInfo.os,
-        screenResolution,
+        screenResolution || '',
         timeOnPage
       ];
 
+      console.log('Executing query with values:', values);
       await connection.execute(query, values);
 
       // Update page stats
@@ -101,7 +126,9 @@ class AnalyticsService {
       console.error('Error tracking page view:', error);
       throw error;
     } finally {
-      connection.release();
+      if (connection) {
+        connection.release();
+      }
     }
   }
 
@@ -430,14 +457,28 @@ const analyticsService = new AnalyticsService();
 
 // Routes
 
+// Test endpoint to check if analytics is working
+router.get('/test', (req, res) => {
+  res.json({ 
+    success: true, 
+    message: 'Analytics route is working',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Track page view
 router.post('/track-page-view', async (req, res) => {
   try {
+    console.log('Received page view data:', req.body);
     const result = await analyticsService.trackPageView(req.body);
     res.json({ success: true, data: result });
   } catch (error) {
     console.error('Error tracking page view:', error);
-    res.status(500).json({ success: false, message: 'Failed to track page view' });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to track page view',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
