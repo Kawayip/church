@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { 
   BarChart3, Users, Calendar, FileText, Settings, 
   Plus, Edit, Trash2, Image, DollarSign, Bell, 
-  Eye, MessageSquare, Upload, LogOut, User, Moon, Sun, Loader2, AlertCircle, Search
+  Eye, MessageSquare, Upload, LogOut, User, Moon, Sun, Loader2, AlertCircle, Search, TrendingUp
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';

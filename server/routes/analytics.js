@@ -5,12 +5,12 @@ const { v4: uuidv4 } = require('uuid');
 const UAParser = require('ua-parser-js');
 const geoip = require('geoip-lite');
 const { authenticateToken } = require('../middleware/auth');
-const db = require('../database/connection');
+const { pool } = require('../database/connection');
 
 // Analytics service class
 class AnalyticsService {
   constructor() {
-    this.db = db;
+    this.pool = pool;
   }
 
   // Parse user agent to get device info
@@ -51,7 +51,7 @@ class AnalyticsService {
 
   // Track page view
   async trackPageView(data) {
-    const connection = await this.db.getConnection();
+    const connection = await this.pool.getConnection();
     try {
       const {
         sessionId,
@@ -107,7 +107,7 @@ class AnalyticsService {
 
   // Start or update session
   async trackSession(data) {
-    const connection = await this.db.getConnection();
+    const connection = await this.pool.getConnection();
     try {
       const {
         sessionId,
@@ -178,7 +178,7 @@ class AnalyticsService {
 
   // End session
   async endSession(sessionId, exitPage) {
-    const connection = await this.db.getConnection();
+    const connection = await this.pool.getConnection();
     try {
       const [session] = await connection.execute(
         'SELECT * FROM sessions WHERE id = ?',
@@ -228,7 +228,7 @@ class AnalyticsService {
 
   // Update active users
   async updateActiveUsers(sessionId, pagePath, userAgent, ipAddress) {
-    const connection = await this.db.getConnection();
+    const connection = await this.pool.getConnection();
     try {
       // Remove old entry if exists
       await connection.execute(
@@ -256,7 +256,7 @@ class AnalyticsService {
 
   // Update page statistics
   async updatePageStats(pagePath, pageTitle) {
-    const connection = await this.db.getConnection();
+    const connection = await this.pool.getConnection();
     try {
       // Check if page stats exist
       const [existing] = await connection.execute(
@@ -290,7 +290,7 @@ class AnalyticsService {
 
   // Get dashboard statistics
   async getDashboardStats(days = 30) {
-    const connection = await this.db.getConnection();
+    const connection = await this.pool.getConnection();
     try {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
@@ -375,7 +375,7 @@ class AnalyticsService {
 
   // Get detailed analytics
   async getDetailedAnalytics(filters = {}) {
-    const connection = await this.db.getConnection();
+    const connection = await this.pool.getConnection();
     try {
       const {
         startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -496,7 +496,7 @@ router.get('/detailed', authenticateToken, async (req, res) => {
 
 // Get real-time active users (admin only)
 router.get('/active-users', authenticateToken, async (req, res) => {
-  const connection = await db.getConnection();
+  const connection = await pool.getConnection();
   try {
     const [activeUsers] = await connection.execute(`
       SELECT 
