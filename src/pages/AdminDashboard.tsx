@@ -15,6 +15,7 @@ import { AdminPosts } from './AdminPosts';
 import { AdminMinistries } from './AdminMinistries';
 import { AdminEvents } from './AdminEvents';
 import { AdminGallery } from './AdminGallery';
+import { AdminAnalytics } from './AdminAnalytics';
 
 export const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -104,11 +105,58 @@ export const AdminDashboard: React.FC = () => {
     }
   }, [activeTab]);
 
+  const [analyticsStats, setAnalyticsStats] = useState<any>(null);
+
+  // Fetch analytics stats for overview
+  useEffect(() => {
+    const fetchAnalyticsStats = async () => {
+      try {
+        const response = await fetch('/api/analytics/dashboard-stats?days=30', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
+        const data = await response.json();
+        if (data.success) {
+          setAnalyticsStats(data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching analytics stats:', error);
+      }
+    };
+
+    fetchAnalyticsStats();
+  }, []);
+
   const stats = [
-    { label: 'Total Members', value: '1,247', change: '+12', icon: Users, color: 'emerald' },
-    { label: 'Monthly Giving', value: 'UGX 15.2M', change: '+8%', icon: DollarSign, color: 'amber' },
-    { label: 'Events This Month', value: '24', change: '+3', icon: Calendar, color: 'blue' },
-    { label: 'Website Views', value: '5,847', change: '+15%', icon: Eye, color: 'purple' }
+    { 
+      label: 'Total Members', 
+      value: '1,247', 
+      change: '+12', 
+      icon: Users, 
+      color: 'emerald' 
+    },
+    { 
+      label: 'Monthly Giving', 
+      value: 'UGX 15.2M', 
+      change: '+8%', 
+      icon: DollarSign, 
+      color: 'amber' 
+    },
+    { 
+      label: 'Events This Month', 
+      value: '24', 
+      change: '+3', 
+      icon: Calendar, 
+      color: 'blue' 
+    },
+    { 
+      label: 'Website Views', 
+      value: analyticsStats ? analyticsStats.total.total_page_views.toLocaleString() : '0', 
+      change: '+15%', 
+      icon: Eye, 
+      color: 'purple' 
+    }
   ];
 
   const recentPosts = [
@@ -125,6 +173,7 @@ export const AdminDashboard: React.FC = () => {
 
   const tabs = [
     { id: 'overview', name: 'Overview', icon: BarChart3 },
+    { id: 'analytics', name: 'Analytics', icon: TrendingUp },
     { id: 'posts', name: 'Posts', icon: FileText },
     { id: 'ministries', name: 'Ministries', icon: Users },
     { id: 'events', name: 'Events', icon: Calendar },
@@ -228,6 +277,9 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </motion.div>
         );
+      
+      case 'analytics':
+        return <AdminAnalytics />;
       
       case 'posts':
         return <AdminPosts />;

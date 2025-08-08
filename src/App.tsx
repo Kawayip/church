@@ -26,6 +26,7 @@ import { Contact } from './pages/Contact';
 import { Login } from './pages/Login';
 import { MemberPortal } from './pages/MemberPortal';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { analytics } from './services/analytics';
 
 // Component to conditionally render layout
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {

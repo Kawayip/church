@@ -20,6 +20,7 @@ const postsRoutes = require('./routes/posts');
 const resourcesRoutes = require('./routes/resources');
 const downloadsRoutes = require('./routes/downloads');
 const socialRoutes = require('./routes/social');
+const analyticsRoutes = require('./routes/analytics');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -118,6 +119,7 @@ app.use('/api/posts', postsRoutes);
 app.use('/api/resources', resourcesRoutes);
 app.use('/api/downloads', downloadsRoutes);
 app.use('/api/social', socialRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Additional API routes for other features
 app.get('/api/dashboard/stats', async (req, res) => {
