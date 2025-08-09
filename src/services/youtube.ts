@@ -79,6 +79,22 @@ class YouTubeAPI {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('YouTube API Error Response:', errorText);
+        
+        // Handle specific error types
+        if (response.status === 403) {
+          const errorData = JSON.parse(errorText);
+          if (errorData.error?.errors?.[0]?.reason === 'quotaExceeded') {
+            return {
+              success: false,
+              error: 'YouTube API quota exceeded. Live stream features are temporarily unavailable. Please try again later or contact the administrator.'
+            };
+          }
+          return {
+            success: false,
+            error: 'YouTube API access forbidden. Please check your API key permissions.'
+          };
+        }
+        
         throw new Error(`YouTube API error: ${response.status}`);
       }
 
@@ -131,6 +147,10 @@ class YouTubeAPI {
       );
 
       if (!response.ok) {
+        if (response.status === 403) {
+          console.warn('YouTube API quota exceeded for stream details');
+          return {}; // Return empty object instead of throwing
+        }
         throw new Error(`YouTube API error: ${response.status}`);
       }
 

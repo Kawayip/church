@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { youtubeAPI, YouTubeLiveStream, YouTubeChatMessage, formatViewerCount, formatTimeAgo } from '../services/youtube';
+import { youtubeAPI, YouTubeLiveStream, YouTubeChatMessage } from '../services/youtube';
 
 export interface UseLiveStreamReturn {
   // Live stream state
@@ -201,10 +201,10 @@ export const useLiveStream = (autoRefresh = true): UseLiveStreamReturn => {
       // Initial fetch
       fetchCurrentStream();
 
-      // Set up polling interval for stream status
+      // Set up polling interval for stream status (reduced frequency to save quota)
       streamIntervalRef.current = setInterval(() => {
         fetchCurrentStream();
-      }, 30000); // Check every 30 seconds
+      }, 120000); // Check every 60 seconds (reduced from 30)
 
       return () => {
         if (streamIntervalRef.current) {
@@ -220,10 +220,10 @@ export const useLiveStream = (autoRefresh = true): UseLiveStreamReturn => {
       // Initial viewer count fetch
       fetchViewerCount();
       
-      // Set up frequent polling for viewer count (every 10 seconds)
+      // Set up polling for viewer count (reduced frequency to save quota)
       viewerCountIntervalRef.current = setInterval(() => {
         fetchViewerCount();
-      }, 10000); // Update every 10 seconds
+      }, 30000); // Update every 30 seconds (reduced from 10)
 
       return () => {
         if (viewerCountIntervalRef.current) {

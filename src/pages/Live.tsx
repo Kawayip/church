@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Users, MessageCircle, Share2, Volume2, Maximize, Settings, RefreshCw, AlertCircle, ExternalLink, Calendar, Clock, Eye, Info } from 'lucide-react';
+import { Play, Users, MessageCircle, Share2, Volume2, Maximize, Settings, RefreshCw, AlertCircle, ExternalLink, Calendar, Eye, Info } from 'lucide-react';
 import { useLiveStream } from '../hooks/useLiveStream';
 import { formatViewerCount, formatTimeAgo } from '../services/youtube';
 import { validateYouTubeConfig } from '../config/youtube';
@@ -9,12 +9,10 @@ import { validateYouTubeConfig } from '../config/youtube';
 export const Live: React.FC = () => {
   const [chatMessage, setChatMessage] = useState('');
   const [userName, setUserName] = useState('');
-  const [showNameInput, setShowNameInput] = useState(false);
   const [showingRecentStream, setShowingRecentStream] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   
@@ -44,15 +42,8 @@ export const Live: React.FC = () => {
     }
   }, [viewerCount, isLive]);
 
-  const upcomingServices = [
-    { title: 'Sabbath Worship Service', date: 'Saturday, Jan 4', time: '11:00 AM' },
-    { title: 'Prayer Meeting', date: 'Wednesday, Jan 8', time: '7:00 PM' },
-    { title: 'Youth Sabbath', date: 'Saturday, Jan 11', time: '11:00 AM' },
-  ];
-
   const handleSendMessage = async () => {
     if (chatMessage.trim()) {
-      const displayName = userName.trim() || 'Anonymous';
       await sendChatMessage(chatMessage.trim());
       setChatMessage('');
     }
@@ -290,9 +281,38 @@ export const Live: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4"
           >
-            <div className="flex items-center space-x-2">
-              <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
-              <span className="text-red-800 dark:text-red-200">{error}</span>
+            <div className="flex items-start space-x-3">
+              <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-red-800 dark:text-red-200 mb-2">
+                  Live Stream Status Unavailable
+                </h3>
+                <p className="text-red-700 dark:text-red-300 text-sm mb-3">
+                  {error}
+                </p>
+                {error.includes('quota exceeded') && (
+                  <div className="text-sm text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg">
+                    <p className="font-medium mb-2">What this means:</p>
+                    <ul className="list-disc list-inside space-y-1 text-xs">
+                      <li>Our YouTube API usage limit has been reached for today</li>
+                      <li>Live stream detection and viewer counts are temporarily unavailable</li>
+                      <li>You can still watch our services directly on YouTube</li>
+                      <li>This will reset automatically at midnight (UTC)</li>
+                    </ul>
+                    <div className="mt-3 pt-3 border-t border-red-300 dark:border-red-700">
+                      <a 
+                        href="https://www.youtube.com/@mtolivessda/live" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center space-x-2 text-red-700 dark:text-red-300 hover:text-red-900 dark:hover:text-red-100 font-medium text-sm"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        <span>Watch Live on YouTube</span>
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </motion.div>
         )}
@@ -358,6 +378,24 @@ export const Live: React.FC = () => {
                             <span>Watch Latest Service</span>
                             <Play className="h-4 w-4" />
                           </button>
+                        )}
+                        
+                        {/* Fallback YouTube link when API is unavailable */}
+                        {error && error.includes('quota exceeded') && (
+                          <div className="mt-4 space-y-3">
+                            <a
+                              href="https://www.youtube.com/@mtolivessda/live"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                              <span>Watch Live on YouTube</span>
+                            </a>
+                            <p className="text-gray-300 text-sm">
+                              Direct link to our YouTube channel for live streams
+                            </p>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -576,7 +614,7 @@ export const Live: React.FC = () => {
               >
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Upcoming Streams</h2>
                 <div className="space-y-4">
-                  {upcomingStreams.map((stream, index) => (
+                  {upcomingStreams.map((stream) => (
                     <div key={stream.id} className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
                       <img 
                         src={stream.thumbnailUrl} 
