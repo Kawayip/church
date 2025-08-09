@@ -301,7 +301,7 @@ export const Live: React.FC = () => {
                     </ul>
                     <div className="mt-3 pt-3 border-t border-red-300 dark:border-red-700">
                       <a 
-                        href="https://www.youtube.com/@mtolivessda/live" 
+                        href="https://www.youtube.com/@sdamtolivesnaalya" 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="inline-flex items-center space-x-2 text-red-700 dark:text-red-300 hover:text-red-900 dark:hover:text-red-100 font-medium text-sm"
@@ -384,7 +384,7 @@ export const Live: React.FC = () => {
                         {error && error.includes('quota exceeded') && (
                           <div className="mt-4 space-y-3">
                             <a
-                              href="https://www.youtube.com/@mtolivessda/live"
+                              href="https://www.youtube.com/@sdamtolivesnaalya"
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
