@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Users, MessageCircle, Share2, Volume2, Maximize, Settings, RefreshCw, AlertCircle, ExternalLink, Calendar, Eye, Info } from 'lucide-react';
+import { Play, Users, MessageCircle, Share2, RefreshCw, AlertCircle, ExternalLink, Calendar, Eye, Info } from 'lucide-react';
 import { useLiveStream } from '../hooks/useLiveStream';
 import { formatViewerCount, formatTimeAgo } from '../services/youtube';
 import { validateYouTubeConfig } from '../config/youtube';
@@ -10,9 +10,6 @@ export const Live: React.FC = () => {
   const [chatMessage, setChatMessage] = useState('');
   const [userName, setUserName] = useState('');
   const [showingRecentStream, setShowingRecentStream] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   
@@ -93,58 +90,9 @@ export const Live: React.FC = () => {
     }
   };
 
-  // Fullscreen functionality
-  const handleFullscreen = () => {
-    const videoContainer = document.querySelector('.aspect-video');
-    if (videoContainer) {
-      if (!document.fullscreenElement) {
-        videoContainer.requestFullscreen().then(() => {
-          setIsFullscreen(true);
-        }).catch(err => {
-          console.error('Error entering fullscreen:', err);
-        });
-      } else {
-        document.exitFullscreen().then(() => {
-          setIsFullscreen(false);
-        }).catch(err => {
-          console.error('Error exiting fullscreen:', err);
-        });
-      }
-    }
-  };
+  // Fullscreen functionality removed - YouTube embed handles this natively
 
-  // Listen for fullscreen changes
-  React.useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
-
-  // Close settings panel when clicking outside or pressing Escape
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      if (showSettings && !target.closest('.settings-panel') && !target.closest('[title="Settings"]')) {
-        setShowSettings(false);
-      }
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && showSettings) {
-        setShowSettings(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [showSettings]);
+  // Settings panel functionality removed - YouTube embed handles video controls
 
   const getYouTubeEmbedUrl = (videoId: string) => {
     return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&controls=1&showinfo=0&fs=1&origin=${window.location.origin}`;
@@ -188,78 +136,80 @@ export const Live: React.FC = () => {
         </motion.div>
       )}
       {/* Live Stream Header */}
-      <section className={`text-white py-6 ${showingRecentStream ? 'bg-gradient-to-r from-blue-600 to-blue-700' : (isLive ? 'bg-gradient-to-r from-red-600 to-red-700' : 'bg-gradient-to-r from-gray-600 to-gray-700')}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+      <section className={`text-white py-3 sm:py-4 lg:py-6 ${showingRecentStream ? 'bg-gradient-to-r from-blue-600 to-blue-700' : (isLive ? 'bg-gradient-to-r from-red-600 to-red-700' : 'bg-gradient-to-r from-gray-600 to-gray-700')}`}>
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <div className="flex items-center space-x-2">
                 {showingRecentStream ? (
-                  <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+                  <div className="w-2 h-2 sm:w-3 sm:h-3 bg-blue-400 rounded-full"></div>
                 ) : isLive ? (
-                  <div className="w-3 h-3 bg-red-400 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 sm:w-3 sm:h-3 bg-red-400 rounded-full animate-pulse"></div>
                 ) : (
-                  <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                  <div className="w-2 h-2 sm:w-3 sm:h-3 bg-gray-400 rounded-full"></div>
                 )}
-                <span className="font-semibold">
+                <span className="font-semibold text-sm sm:text-base">
                   {showingRecentStream ? 'RECENT' : (isLive ? 'LIVE' : 'OFFLINE')}
                 </span>
               </div>
-              <h1 className="text-2xl font-bold">
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold truncate max-w-[200px] sm:max-w-none">
                 {showingRecentStream ? (recentStream?.title || 'Recent Service') : 
                  (isLive ? (currentStream?.title || 'Sabbath Worship Service') : 'Live Stream')}
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center justify-between sm:justify-end space-x-2 sm:space-x-4">
               {isLive && (
-                <div className="flex items-center space-x-3 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg">
+                <div className="hidden sm:flex items-center space-x-3 bg-white/10 backdrop-blur-sm px-3 py-2 rounded-lg">
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
-                    <Users className="h-5 w-5" />
-                    <span className="font-semibold">{formatViewerCount(viewerCount)}</span>
-                    <span className="text-sm opacity-90">watching live</span>
+                    <Users className="h-4 w-4" />
+                    <span className="font-semibold text-sm">{formatViewerCount(viewerCount)}</span>
+                    <span className="text-xs opacity-90">watching</span>
                   </div>
                   <div className="text-xs opacity-75">
                     Updated {lastUpdateTime.toLocaleTimeString()}
                   </div>
                 </div>
               )}
-              <button 
-                onClick={refreshStream}
-                disabled={loading}
-                className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
-                title="Refresh stream status"
-              >
-                <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
-              </button>
-              <button 
-                onClick={handleShare}
-                className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-colors"
-                title="Share this page"
-              >
-                <Share2 className="h-5 w-5" />
-              </button>
+              <div className="flex items-center space-x-2">
+                <button 
+                  onClick={refreshStream}
+                  disabled={loading}
+                  className="bg-white/20 hover:bg-white/30 p-2 sm:px-3 sm:py-2 rounded-lg transition-colors disabled:opacity-50"
+                  title="Refresh stream status"
+                >
+                  <RefreshCw className={`h-4 w-4 sm:h-5 sm:w-5 ${loading ? 'animate-spin' : ''}`} />
+                </button>
+                <button 
+                  onClick={handleShare}
+                  className="bg-white/20 hover:bg-white/30 p-2 sm:px-3 sm:py-2 rounded-lg transition-colors"
+                  title="Share this page"
+                >
+                  <Share2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
         {!configStatus.valid && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4"
+            className="mb-4 sm:mb-6 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 sm:p-4"
           >
             <div className="flex items-start space-x-3">
-              <Info className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
-              <div className="flex-1">
-                <h3 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
+              <Info className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2 text-sm sm:text-base">
                   YouTube API Not Configured
                 </h3>
-                <p className="text-yellow-700 dark:text-yellow-300 text-sm mb-3">
+                <p className="text-yellow-700 dark:text-yellow-300 text-xs sm:text-sm mb-3">
                   To display live viewer counts and stream information, you need to configure the YouTube API.
                 </p>
-                <div className="text-sm text-yellow-600 dark:text-yellow-400">
+                <div className="text-xs sm:text-sm text-yellow-600 dark:text-yellow-400">
                   <p className="font-medium mb-1">Missing configuration:</p>
                   <ul className="list-disc list-inside space-y-1">
                     {configStatus.errors.map((error, index) => (
@@ -279,21 +229,21 @@ export const Live: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4"
+            className="mb-4 sm:mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 sm:p-4"
           >
             <div className="flex items-start space-x-3">
-              <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
-              <div className="flex-1">
-                <h3 className="font-semibold text-red-800 dark:text-red-200 mb-2">
+              <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-red-800 dark:text-red-200 mb-2 text-sm sm:text-base">
                   Live Stream Status Unavailable
                 </h3>
-                <p className="text-red-700 dark:text-red-300 text-sm mb-3">
+                <p className="text-red-700 dark:text-red-300 text-xs sm:text-sm mb-3">
                   {error}
                 </p>
                 {error.includes('quota exceeded') && (
-                  <div className="text-sm text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg">
+                  <div className="text-xs sm:text-sm text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg">
                     <p className="font-medium mb-2">What this means:</p>
-                    <ul className="list-disc list-inside space-y-1 text-xs">
+                    <ul className="list-disc list-inside space-y-1">
                       <li>Our YouTube API usage limit has been reached for today</li>
                       <li>Live stream detection and viewer counts are temporarily unavailable</li>
                       <li>You can still watch our services directly on YouTube</li>
@@ -317,7 +267,7 @@ export const Live: React.FC = () => {
           </motion.div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
           {/* Main Video Player */}
           <div className="lg:col-span-3">
             <motion.div
@@ -343,11 +293,8 @@ export const Live: React.FC = () => {
                       alt="Live Stream"
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
                       <div className="text-center">
-                        <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center mb-4 mx-auto">
-                          <Play className="h-10 w-10 text-white ml-1" />
-                        </div>
                         <p className="text-white text-lg font-semibold">Stream Offline</p>
                         <p className="text-gray-300 mb-4">We're not live right now</p>
                         
@@ -402,151 +349,27 @@ export const Live: React.FC = () => {
                   </>
                 )}
 
-                {/* Video Controls */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <button 
-                        className="text-white hover:text-gray-300"
-                        title="Play/Pause"
-                        onClick={() => {
-                          // For YouTube embed, we can't directly control play/pause
-                          // This will refresh the stream instead
-                          refreshStream();
-                        }}
-                      >
-                        <Play className="h-6 w-6" />
-                      </button>
-                      <button 
-                        className="text-white hover:text-gray-300"
-                        title={isMuted ? "Unmute" : "Mute"}
-                        onClick={() => setIsMuted(!isMuted)}
-                      >
-                        {isMuted ? (
-                          <Volume2 className="h-6 w-6" style={{ filter: 'grayscale(100%)' }} />
-                        ) : (
-                          <Volume2 className="h-6 w-6" />
-                        )}
-                      </button>
-                      <div className="text-white text-sm">
-                        {showingRecentStream ? 'RECENT SERVICE' : (isLive ? 'LIVE' : '00:00 / 00:00')}
-                      </div>
-                      {isLive && viewerCount > 0 && (
-                        <div className="flex items-center space-x-2 bg-black/50 px-3 py-1 rounded-full">
-                          <Eye className="h-4 w-4 text-red-400" />
-                          <span className="text-white text-sm font-medium">{formatViewerCount(viewerCount)}</span>
-                        </div>
-                      )}
+                {/* Stream Status Overlay - Only show essential info */}
+                <div className="absolute top-4 left-4 flex items-center space-x-2">
+                  {showingRecentStream && (
+                    <button 
+                      onClick={() => setShowingRecentStream(false)}
+                      className="bg-black/70 hover:bg-black/90 text-white px-3 py-1 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Back to Live
+                    </button>
+                  )}
+                  {isLive && viewerCount > 0 && (
+                    <div className="flex items-center space-x-2 bg-black/70 px-3 py-1 rounded-full">
+                      <Eye className="h-4 w-4 text-red-400" />
+                      <span className="text-white text-sm font-medium">{formatViewerCount(viewerCount)}</span>
+                      <span className="text-white text-xs opacity-75">watching</span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      {showingRecentStream && (
-                        <button 
-                          onClick={() => setShowingRecentStream(false)}
-                          className="text-white hover:text-gray-300 bg-black/50 px-3 py-1 rounded text-sm"
-                        >
-                          Back to Live
-                        </button>
-                      )}
-                      <button 
-                        className="text-white hover:text-gray-300"
-                        title="Settings"
-                        onClick={() => setShowSettings(!showSettings)}
-                      >
-                        <Settings className="h-6 w-6" />
-                      </button>
-                      <button 
-                        className="text-white hover:text-gray-300"
-                        title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-                        onClick={handleFullscreen}
-                      >
-                        {isFullscreen ? (
-                          <Maximize className="h-6 w-6" style={{ transform: 'rotate(180deg)' }} />
-                        ) : (
-                          <Maximize className="h-6 w-6" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
-              {/* Settings Panel */}
-              {showSettings && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="settings-panel absolute top-4 right-4 bg-black/90 backdrop-blur-sm rounded-lg p-4 text-white min-w-48 z-10"
-                >
-                  <div className="space-y-3">
-                    <h3 className="font-semibold text-sm mb-2">Stream Settings</h3>
-                    
-                    {/* Quality Setting */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Auto-refresh</span>
-                      <button 
-                        onClick={refreshStream}
-                        className="text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded"
-                      >
-                        Refresh Now
-                      </button>
-                    </div>
-
-                    {/* Mute Setting */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Mute</span>
-                      <button 
-                        onClick={() => setIsMuted(!isMuted)}
-                        className={`text-xs px-2 py-1 rounded ${isMuted ? 'bg-red-500' : 'bg-white/20 hover:bg-white/30'}`}
-                      >
-                        {isMuted ? 'On' : 'Off'}
-                      </button>
-                    </div>
-
-                    {/* Fullscreen Setting */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Fullscreen</span>
-                      <button 
-                        onClick={handleFullscreen}
-                        className={`text-xs px-2 py-1 rounded ${isFullscreen ? 'bg-blue-500' : 'bg-white/20 hover:bg-white/30'}`}
-                      >
-                        {isFullscreen ? 'Exit' : 'Enter'}
-                      </button>
-                    </div>
-
-                    {/* Copy URL */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Copy URL</span>
-                      <button 
-                        onClick={() => {
-                          navigator.clipboard.writeText(window.location.href);
-                          showToast('URL copied to clipboard!');
-                        }}
-                        className="text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded"
-                      >
-                        Copy
-                      </button>
-                    </div>
-
-                    <hr className="border-white/20" />
-
-                    {/* Stream Info */}
-                    <div className="text-xs space-y-1">
-                      <div>Status: {isLive ? 'Live' : 'Offline'}</div>
-                      {isLive && viewerCount > 0 && (
-                        <div className="flex items-center space-x-2">
-                          <Eye className="h-3 w-3 text-red-400" />
-                          <span>Viewers: {formatViewerCount(viewerCount)}</span>
-                        </div>
-                      )}
-                      <div>Last Updated: {lastUpdateTime.toLocaleTimeString()}</div>
-                      {isLive && (
-                        <div className="text-green-400 font-medium">Real-time updates active</div>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
+                            {/* Settings Panel Removed - YouTube embed handles video controls */}
             </motion.div>
 
             {/* Service Information */}
@@ -554,50 +377,50 @@ export const Live: React.FC = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="mt-6 card p-6"
+              className="mt-4 sm:mt-6 card p-3 sm:p-4 lg:p-6"
             >
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">
                 {isLive ? 'Live Service' : 'Service Information'}
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Title</h3>
-                  <p className="text-gray-600 dark:text-gray-300">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1 sm:mb-2 text-sm sm:text-base">Title</h3>
+                  <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
                     {isLive ? (currentStream?.title || 'Sabbath Worship Service') : 
                      (recentStream?.title || 'Sabbath Worship Service')}
                   </p>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Channel</h3>
-                  <p className="text-gray-600 dark:text-gray-300">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1 sm:mb-2 text-sm sm:text-base">Channel</h3>
+                  <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
                     {currentStream?.channelTitle || recentStream?.channelTitle || 'Mt. Olives SDA Church'}
                   </p>
                 </div>
                 {isLive && currentStream?.actualStartTime && (
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Started</h3>
-                    <p className="text-gray-600 dark:text-gray-300">
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-1 sm:mb-2 text-sm sm:text-base">Started</h3>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
                       {new Date(currentStream.actualStartTime).toLocaleString()}
                     </p>
                   </div>
                 )}
                 {!isLive && recentStream?.publishedAt && (
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Last Service</h3>
-                    <p className="text-gray-600 dark:text-gray-300">
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-1 sm:mb-2 text-sm sm:text-base">Last Service</h3>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
                       {new Date(recentStream.publishedAt).toLocaleDateString()}
                     </p>
                   </div>
                 )}
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Service Time</h3>
-                  <p className="text-gray-600 dark:text-gray-300">11:00 AM - 12:30 PM EAT</p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1 sm:mb-2 text-sm sm:text-base">Service Time</h3>
+                  <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">11:00 AM - 12:30 PM EAT</p>
                 </div>
               </div>
               {(currentStream?.description || recentStream?.description) && (
-                <div className="mt-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Description</h3>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm">
+                <div className="mt-3 sm:mt-4">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1 sm:mb-2 text-sm sm:text-base">Description</h3>
+                  <p className="text-gray-600 dark:text-gray-300 text-xs sm:text-sm">
                     {(currentStream?.description || recentStream?.description || '').substring(0, 200)}...
                   </p>
                 </div>
@@ -610,21 +433,21 @@ export const Live: React.FC = () => {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
-                className="mt-6 card p-6"
+                className="mt-4 sm:mt-6 card p-3 sm:p-4 lg:p-6"
               >
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Upcoming Streams</h2>
-                <div className="space-y-4">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">Upcoming Streams</h2>
+                <div className="space-y-3 sm:space-y-4">
                   {upcomingStreams.map((stream) => (
-                    <div key={stream.id} className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
+                    <div key={stream.id} className="flex items-center space-x-3 sm:space-x-4 p-3 sm:p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
                       <img 
                         src={stream.thumbnailUrl} 
                         alt={stream.title}
-                        className="w-20 h-12 object-cover rounded"
+                        className="w-16 h-10 sm:w-20 sm:h-12 object-cover rounded flex-shrink-0"
                       />
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 dark:text-white">{stream.title}</h3>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate">{stream.title}</h3>
                         {stream.scheduledStartTime && (
-                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
                             {formatScheduledTime(stream.scheduledStartTime)}
                           </p>
                         )}
@@ -633,7 +456,7 @@ export const Live: React.FC = () => {
                         href={getYouTubeWatchUrl(stream.id)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-emerald-600 dark:text-emerald-400 hover:underline text-sm"
+                        className="text-emerald-600 dark:text-emerald-400 hover:underline text-xs sm:text-sm flex-shrink-0"
                       >
                         Set Reminder
                       </a>
@@ -645,7 +468,7 @@ export const Live: React.FC = () => {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Live Chat */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
@@ -653,48 +476,50 @@ export const Live: React.FC = () => {
               transition={{ duration: 0.8 }}
               className="card overflow-hidden"
             >
-              <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white p-4">
+              <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white p-3 sm:p-4">
                 <div className="flex items-center space-x-2">
-                  <MessageCircle className="h-5 w-5" />
-                  <h3 className="font-semibold">Live Chat</h3>
+                  <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <h3 className="font-semibold text-sm sm:text-base">Live Chat</h3>
                   {chatLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
                 </div>
               </div>
               
               {chatError && (
-                <div className="p-4 bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800">
-                  <p className="text-red-800 dark:text-red-200 text-sm">{chatError}</p>
+                <div className="p-3 sm:p-4 bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800">
+                  <p className="text-red-800 dark:text-red-200 text-xs sm:text-sm">{chatError}</p>
                 </div>
               )}
               
-              <div className="h-64 overflow-y-auto p-4 space-y-3">
+              <div className="h-48 sm:h-64 overflow-y-auto p-3 sm:p-4 space-y-2 sm:space-y-3">
                 {chatMessages.length === 0 ? (
-                  <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-                    {isLive ? 'No messages yet. Be the first to say something!' : 'Chat will be available when the stream goes live.'}
+                  <div className="text-center text-gray-500 dark:text-gray-400 py-6 sm:py-8">
+                    <p className="text-xs sm:text-sm">
+                      {isLive ? 'No messages yet. Be the first to say something!' : 'Chat will be available when the stream goes live.'}
+                    </p>
                   </div>
                 ) : (
                   chatMessages.map((msg) => (
-                    <div key={msg.id} className="text-sm">
+                    <div key={msg.id} className="text-xs sm:text-sm">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                        <span className="font-medium text-emerald-600 dark:text-emerald-400 truncate max-w-[120px] sm:max-w-none">
                           {msg.authorName}
                           {msg.superChatDetails && (
-                            <span className="ml-2 text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
+                            <span className="ml-1 sm:ml-2 text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-1 sm:px-2 py-1 rounded">
                               {msg.superChatDetails.amountDisplayString}
                             </span>
                           )}
                         </span>
-                        <span className="text-gray-500 dark:text-gray-400 text-xs">
+                        <span className="text-gray-500 dark:text-gray-400 text-xs flex-shrink-0">
                           {formatTimeAgo(msg.publishedAt)}
                         </span>
                       </div>
-                      <p className="text-gray-700 dark:text-gray-300">{msg.displayMessage}</p>
+                      <p className="text-gray-700 dark:text-gray-300 break-words">{msg.displayMessage}</p>
                     </div>
                   ))
                 )}
               </div>
               
-              <div className="p-4 border-t border-gray-200 dark:border-slate-700">
+              <div className="p-3 sm:p-4 border-t border-gray-200 dark:border-slate-700">
                 {/* Name input for anonymous users */}
                 {!userName && isLive && (
                   <div className="mb-3">
@@ -703,7 +528,7 @@ export const Live: React.FC = () => {
                       value={userName}
                       onChange={(e) => setUserName(e.target.value)}
                       placeholder="Enter your name (optional)"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:border-emerald-500 dark:bg-slate-800 dark:text-white dark:placeholder-gray-400 text-sm"
+                      className="w-full px-2 sm:px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:border-emerald-500 dark:bg-slate-800 dark:text-white dark:placeholder-gray-400 text-xs sm:text-sm"
                     />
                   </div>
                 )}
@@ -716,12 +541,12 @@ export const Live: React.FC = () => {
                     onKeyPress={handleKeyPress}
                     placeholder={isLive ? "Type your message..." : "Chat disabled when offline"}
                     disabled={!isLive}
-                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:border-emerald-500 dark:bg-slate-800 dark:text-white dark:placeholder-gray-400 disabled:opacity-50"
+                    className="flex-1 px-2 sm:px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:border-emerald-500 dark:bg-slate-800 dark:text-white dark:placeholder-gray-400 disabled:opacity-50 text-xs sm:text-sm"
                   />
                   <button 
                     onClick={handleSendMessage}
                     disabled={!isLive || !chatMessage.trim()}
-                    className="btn-primary px-4 py-2 disabled:opacity-50"
+                    className="btn-primary px-3 sm:px-4 py-2 disabled:opacity-50 text-xs sm:text-sm"
                   >
                     Send
                   </button>
@@ -758,17 +583,17 @@ export const Live: React.FC = () => {
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="card p-6"
+              className="card p-3 sm:p-4 lg:p-6"
             >
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
-              <div className="space-y-3">
-                <button className="w-full btn-primary py-2">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">Quick Actions</h3>
+              <div className="space-y-2 sm:space-y-3">
+                <button className="w-full btn-primary py-2 text-sm sm:text-base">
                   Request Prayer
                 </button>
-                <button className="w-full btn-accent py-2">
+                <button className="w-full btn-accent py-2 text-sm sm:text-base">
                   Give Online
                 </button>
-                <button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-2 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-all duration-200 shadow-lg hover:shadow-xl dark:from-purple-400 dark:to-pink-400 dark:hover:from-purple-500 dark:hover:to-pink-500">
+                <button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-2 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-all duration-200 shadow-lg hover:shadow-xl dark:from-purple-400 dark:to-pink-400 dark:hover:from-purple-500 dark:hover:to-pink-500 text-sm sm:text-base">
                   Download Bulletin
                 </button>
               </div>
